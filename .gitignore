@@ -1,0 +1,31 @@
+# 配置文件（包含敏感信息）
+config.php
+
+# 安装锁定文件
+install.lock
+
+# 缓存文件
+cache/*.cache
+
+# 上传文件
+uploads/images/*
+uploads/attachments/*
+!uploads/images/.gitkeep
+!uploads/attachments/.gitkeep
+!uploads/.htaccess
+
+# 系统文件
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+
+# IDE 文件
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 临时文件
+*.bak
+*.orig
