@@ -1171,7 +1171,8 @@ function getUnreadNotificationCount(int $userId): int {
 
 function getUserNotifications(int $userId, int $limit = 20, int $offset = 0): array {
     global $pdo;
-    $stmt = $pdo->prepare("SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?");
+    /* 未读消息排在前面，然后按时间倒序 */
+    $stmt = $pdo->prepare("SELECT * FROM notifications WHERE user_id = ? ORDER BY is_read ASC, created_at DESC LIMIT ? OFFSET ?");
     $stmt->execute([$userId, $limit, $offset]);
     return $stmt->fetchAll();
 }
