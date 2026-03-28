@@ -1194,6 +1194,30 @@ function deleteNotification(int $notificationId, int $userId): bool {
     return $stmt->execute([$notificationId, $userId]);
 }
 
+/**
+ * 标记与特定帖子相关的所有未读通知为已读
+ * 
+ * @param int $postId 帖子ID
+ * @param int $userId 用户ID
+ * @return bool 是否成功
+ */
+function markPostNotificationsAsRead(int $postId, int $userId): bool {
+    global $pdo;
+    
+    /* 查找与该帖子相关的未读通知 */
+    $stmt = $pdo->prepare("
+        UPDATE notifications 
+        SET is_read = 1 
+        WHERE user_id = ? 
+        AND is_read = 0 
+        AND (
+            JSON_EXTRACT(data, '$.post_id') = ?
+            OR JSON_EXTRACT(data, '$.post_id') = CAST(? AS JSON)
+        )
+    ");
+    return $stmt->execute([$userId, $postId, $postId]);
+}
+
 function getNotificationTypeLabel(string $type): string {
     $labels = [
         'post_reply' => '帖子回复',

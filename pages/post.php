@@ -24,6 +24,11 @@ if (!$post) {
 
 incrementPostViews($id);
 
+/* 如果用户已登录，标记与该帖子相关的通知为已读 */
+if (isLoggedIn()) {
+    markPostNotificationsAsRead($id, $_SESSION['user_id']);
+}
+
 if (isset($_GET['toggle_favorite']) && isLoggedIn()) {
     if (toggleFavorite($id, $_SESSION['user_id'])) {
         $isNowFavorited = isFavorited($id, $_SESSION['user_id']);
