@@ -939,11 +939,14 @@ function renderComments(array $comments, int $postId, bool $isLocked = false): s
             $html .= '<div class="comment-replies">';
             foreach ($comment['children'] as $reply) {
                 $html .= '<div class="reply-item" id="comment-' . $reply['id'] . '">';
+                $html .= '<div class="reply-header">';
                 $html .= '<span class="reply-author"><a href="' . SITE_URL . '/pages/profile.php?user=' . $reply['user_id'] . '">' . escape($reply['username']) . '</a></span>';
                 if (!empty($reply['reply_to_username'])) {
-                    $html .= '<span class="reply-to">回复 <a href="' . SITE_URL . '/pages/profile.php?user=' . $reply['reply_to_user_id'] . '">@' . escape($reply['reply_to_username']) . '</a></span>：';
+                    $html .= '<span class="reply-to">回复 <a href="' . SITE_URL . '/pages/profile.php?user=' . $reply['reply_to_user_id'] . '">@' . escape($reply['reply_to_username']) . '</a></span>';
                 }
-                $html .= '<span class="reply-text">' . nl2br(escape($reply['content'])) . '</span>';
+                $html .= '</div>';
+                $html .= '<div class="reply-content">' . nl2br(escape($reply['content'])) . '</div>';
+                $html .= '<div class="reply-footer">';
                 $html .= '<span class="reply-time">' . formatTime($reply['created_at']) . '</span>';
                 $html .= '<span class="reply-actions">';
                 if (isLoggedIn() && (!$isLocked || isAdmin())) {
@@ -952,7 +955,7 @@ function renderComments(array $comments, int $postId, bool $isLocked = false): s
                 if (isLoggedIn() && ($_SESSION['user_id'] == $reply['user_id'] || isAdmin())) {
                     $html .= '<a href="' . SITE_URL . '/pages/post.php?id=' . $postId . '&delete_comment=' . $reply['id'] . '" onclick="return confirm(\'确定要删除此评论吗？\')">删除</a>';
                 }
-                $html .= '</span></div>';
+                $html .= '</span></div></div>';
             }
             $html .= '</div>';
         }
