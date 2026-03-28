@@ -11,7 +11,7 @@ $maxCommentLength = (int)getSetting('max_comment_length', '2000');
 
 $GLOBALS['extraStyles'] = <<<CSS
 .container { max-width: 900px; }
-.post-content { line-height: 1.8; font-size: 1rem; }
+.post-content { line-height: 0.9; font-size: 1rem; }
 .post-content a { color: #0d6efd; text-decoration: underline; }
 .post-content img { max-width: 100%; height: auto; cursor: pointer; border-radius: 0.375rem; margin: 0.5rem 0; }
 .post-content h1, .post-content h2, .post-content h3, .post-content h4, .post-content h5, .post-content h6 { margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
