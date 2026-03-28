@@ -61,7 +61,7 @@ $inviteOnly = getSetting('invite_only', '0') === '1';
         </form>
 
         <div class="text-center mt-3">
-            已有账号？ <a href="<?php echo SITE_URL; ?>/login.php">立即登录</a>
+            已有账号？ <a href="<?php echo SITE_URL; ?>/pages/login.php">立即登录</a>
         </div>
     </div>
 </div>

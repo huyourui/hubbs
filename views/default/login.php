@@ -40,7 +40,7 @@
 
         <div class="text-center mt-3">
             <?php if (getSetting('allow_register', '1') === '1'): ?>
-                还没有账号？ <a href="<?php echo SITE_URL; ?>/register.php">立即注册</a>
+                还没有账号？ <a href="<?php echo SITE_URL; ?>/pages/register.php">立即注册</a>
             <?php endif; ?>
         </div>
     </div>
