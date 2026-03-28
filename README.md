@@ -1,6 +1,6 @@
 # HuBBS - 一款基于MIT协议的开源论坛
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![PHP](https://img.shields.io/badge/PHP-%3E%3D7.4-purple.svg)
 ![MySQL](https://img.shields.io/badge/MySQL-%3E%3D5.7-orange.svg)
@@ -207,6 +207,25 @@ hubbs/
 
 ## 📝 更新日志
 
+### v1.1.0 (2026-03-28)
+
+**新增功能**
+- 编辑器支持粘贴上传图片和附件
+- IP地址解析显示地区信息（省一级）
+- 后台帖子管理操作改为下拉菜单样式
+- 图片和附件按日期存储（uploads/images/YYYYMMDD/）
+
+**目录优化**
+- 重构目录结构，按功能分类
+- 新增 `core/` 目录存放核心文件
+- 新增 `pages/` 目录存放页面入口
+
+**Bug修复**
+- 修复目录结构调整后的链接路径问题
+- 修复粘贴上传图片时的错误提示问题
+- 修复后台管理菜单链接问题
+- 修复分类缓存不刷新问题
+
 ### v1.0.0 (2024-03-28)
 
 **新增功能**
@@ -220,20 +239,9 @@ hubbs/
 - 收藏点赞功能
 - 积分等级系统
 - Ctrl+Enter 快捷发布帖子和评论
-- IP地址解析显示地区信息
-- 后台帖子管理下拉菜单操作
 - 邀请码注册功能
 - 用户等级系统
 - 积分规则管理
-
-**目录优化**
-- 重构目录结构，按功能分类
-- 新增 `core/` 目录存放核心文件
-- 新增 `pages/` 目录存放页面入口
-- 优化代码组织结构
-
-**已知问题**
-- 暂无
 
 ---
 
