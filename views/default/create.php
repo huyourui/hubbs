@@ -444,10 +444,16 @@ document.addEventListener('DOMContentLoaded', function() {
         editor.focus();
         document.execCommand('insertHTML', false, imgHtml);
         
-        if (!item.classList.contains('inserted')) {
+        if (item && !item.classList.contains('inserted')) {
             item.classList.add('inserted');
             insertedImages.push(image.id);
             updateHiddenFields();
+        } else if (!item) {
+            /* 粘贴上传时没有 item，直接添加到已插入列表 */
+            if (insertedImages.indexOf(image.id) === -1) {
+                insertedImages.push(image.id);
+                updateHiddenFields();
+            }
         }
         updateCharCount();
     }
