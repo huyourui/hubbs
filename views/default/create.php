@@ -572,6 +572,121 @@ document.addEventListener('DOMContentLoaded', function() {
         attachmentIdsInput.value = uploadedAttachments.map(function(a) { return a.id; }).join(',');
     }
     
+    /* 粘贴上传图片和附件 */
+    editor.addEventListener('paste', function(e) {
+        var items = e.clipboardData && e.clipboardData.items;
+        if (!items) return;
+        
+        for (var i = 0; i < items.length; i++) {
+            var item = items[i];
+            
+            /* 处理图片粘贴 */
+            if (item.type.indexOf('image') !== -1) {
+                e.preventDefault();
+                var file = item.getAsFile();
+                if (file) {
+                    uploadAndInsertImage(file);
+                }
+            }
+            /* 处理文件粘贴 */
+            else if (item.kind === 'file' && item.type.indexOf('image') === -1) {
+                e.preventDefault();
+                var file = item.getAsFile();
+                if (file) {
+                    uploadAttachmentFile(file);
+                }
+            }
+        }
+    });
+    
+    /* 上传并插入图片到编辑器 */
+    function uploadAndInsertImage(file) {
+        if (!file.type.match(/^image\/(jpeg|png|gif|webp)$/)) {
+            alert('仅支持 JPG、PNG、GIF、WEBP 格式的图片');
+            return;
+        }
+        
+        if (file.size > maxImageSize) {
+            alert('图片大小超过限制（最大 ' + maxImageSizeMB + 'MB）');
+            return;
+        }
+        
+        /* 显示上传中提示 */
+        var loadingId = 'loading-' + Date.now();
+        var loadingHtml = '<span id="' + loadingId + '" style="color:#888;">[图片上传中...]</span>';
+        editor.focus();
+        document.execCommand('insertHTML', false, loadingHtml);
+        
+        var formData = new FormData();
+        formData.append('image', file);
+        formData.append('action', 'upload');
+        
+        fetch(SITE_URL + '/api/upload.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            var loadingEl = document.getElementById(loadingId);
+            if (loadingEl) loadingEl.remove();
+            
+            if (data.success) {
+                /* 添加到已上传列表 */
+                addImagePreview(data.image);
+                /* 直接插入到编辑器 */
+                insertImageToEditor(data.image, null);
+            } else {
+                alert(data.error || '上传失败');
+            }
+        })
+        .catch(function(err) {
+            var loadingEl = document.getElementById(loadingId);
+            if (loadingEl) loadingEl.remove();
+            alert('上传失败: ' + err.message);
+        });
+    }
+    
+    /* 上传附件文件 */
+    function uploadAttachmentFile(file) {
+        var allowedExts = [{$allowedAttachmentExts}];
+        var ext = file.name.split('.').pop().toLowerCase();
+        
+        if (allowedExts.length > 0 && allowedExts.indexOf(ext) === -1) {
+            alert('不允许上传此类型的文件');
+            return;
+        }
+        
+        if (file.size > maxAttachmentSize) {
+            alert('附件大小超过限制（最大 ' + formatFileSize(maxAttachmentSize) + '）');
+            return;
+        }
+        
+        if (uploadedAttachments.length >= maxAttachmentCount) {
+            alert('最多只能上传 ' + maxAttachmentCount + ' 个附件');
+            return;
+        }
+        
+        var formData = new FormData();
+        formData.append('attachment', file);
+        formData.append('action', 'upload_attachment');
+        
+        fetch(SITE_URL + '/api/upload.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (data.success) {
+                addAttachmentItem(data.attachment);
+            } else {
+                alert(data.error || '附件上传失败');
+            }
+        })
+        .catch(function(err) {
+            alert('附件上传失败: ' + err.message);
+        });
+    }
+    
     function formatFileSize(bytes) {
         if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(2) + ' GB';
         if (bytes >= 1048576) return (bytes / 1048576).toFixed(2) + ' MB';
