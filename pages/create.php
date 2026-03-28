@@ -24,7 +24,7 @@ $categories = getCategories();
 $maxPostLength = (int)getSetting('max_post_length', '10000');
 $attachmentMaxCount = getAttachmentMaxCount();
 $attachmentMaxSize = getAttachmentMaxSize();
-$attachmentAllowedExts = getAttachmentAllowedExts();
+$allowedAttachmentExts = getAttachmentAllowedExts();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = trim($_POST['title'] ?? '');

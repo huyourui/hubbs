@@ -654,7 +654,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     /* 上传附件文件 */
     function uploadAttachmentFile(file) {
-        var allowedExts = [{$allowedAttachmentExts}];
+        var allowedExts = <?php echo json_encode($allowedAttachmentExts); ?>;
         var ext = file.name.split('.').pop().toLowerCase();
         
         if (allowedExts.length > 0 && allowedExts.indexOf(ext) === -1) {
