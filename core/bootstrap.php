@@ -30,6 +30,10 @@ if (!defined('ROOT_PATH')) {
     $documentRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
     $rootPath = str_replace($documentRoot, '', $rootPath);
     $rootPath = rtrim($rootPath, '/');
+    /* 如果是根目录安装，确保 ROOT_PATH 为空字符串 */
+    if ($rootPath === '' || $rootPath === '.') {
+        $rootPath = '';
+    }
     define('ROOT_PATH', $rootPath);
 }
 
