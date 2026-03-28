@@ -24,7 +24,7 @@ CSS;
                 <h4 class="mb-0">消息中心</h4>
                 <div>
                     <?php if ($unreadCount > 0): ?>
-                        <a href="<?php echo SITE_URL; ?>/notifications.php?mark_all_read=1" class="btn btn-sm btn-outline-primary">全部标为已读</a>
+                        <a href="<?php echo SITE_URL; ?>/pages/notifications.php?mark_all_read=1" class="btn btn-sm btn-outline-primary">全部标为已读</a>
                     <?php endif; ?>
                 </div>
             </div>
@@ -49,12 +49,12 @@ CSS;
                                 $data = $notification['data'] ? json_decode($notification['data'], true) : null;
                                 if ($data && isset($data['post_id'])): 
                                 ?>
-                                    <a href="<?php echo SITE_URL; ?>/post.php?id=<?php echo $data['post_id']; ?>" class="btn btn-sm btn-outline-primary">查看帖子</a>
+                                    <a href="<?php echo SITE_URL; ?>/pages/post.php?id=<?php echo $data['post_id']; ?>" class="btn btn-sm btn-outline-primary">查看帖子</a>
                                 <?php endif; ?>
                                 <?php if (!$notification['is_read']): ?>
-                                    <a href="<?php echo SITE_URL; ?>/notifications.php?mark_read=<?php echo $notification['id']; ?>" class="btn btn-sm btn-outline-secondary">标为已读</a>
+                                    <a href="<?php echo SITE_URL; ?>/pages/notifications.php?mark_read=<?php echo $notification['id']; ?>" class="btn btn-sm btn-outline-secondary">标为已读</a>
                                 <?php endif; ?>
-                                <a href="<?php echo SITE_URL; ?>/notifications.php?delete=<?php echo $notification['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('确定要删除此通知吗？')">删除</a>
+                                <a href="<?php echo SITE_URL; ?>/pages/notifications.php?delete=<?php echo $notification['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('确定要删除此通知吗？')">删除</a>
                             </div>
                         </div>
                     <?php endforeach; ?>

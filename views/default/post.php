@@ -145,6 +145,26 @@ document.querySelectorAll('.reply-btn').forEach(function(btn) {
     }
 })();
 
+/* 回复评论表单支持 Ctrl+Enter 快速发布 */
+document.querySelectorAll('.reply-form form').forEach(function(form) {
+    var textarea = form.querySelector('textarea');
+    if (textarea) {
+        textarea.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                if (textarea.value.trim()) {
+                    var hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'submit_comment';
+                    hiddenInput.value = '1';
+                    form.appendChild(hiddenInput);
+                    form.submit();
+                }
+            }
+        });
+    }
+});
+
 function openLightbox(src) {
     var lightbox = document.getElementById('image-lightbox');
     var img = lightbox.querySelector('img');
