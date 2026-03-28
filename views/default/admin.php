@@ -201,6 +201,12 @@ CSS;
                                     <?php echo escape($dashboardData['hubbsVersion']); ?>
                                     <?php if (!empty($dashboardData['updateCheck']['has_update'])): ?>
                                         <span class="badge bg-warning text-dark ms-1">有更新</span>
+                                    <?php elseif (isset($dashboardData['updateCheck']['git_sync'])): ?>
+                                        <?php if ($dashboardData['updateCheck']['git_sync']['synced']): ?>
+                                            <span class="badge bg-success ms-1">最新</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-warning text-dark ms-1">有更新</span>
+                                        <?php endif; ?>
                                     <?php elseif (isset($dashboardData['updateCheck']['error'])): ?>
                                         <span class="badge bg-secondary ms-1" title="<?php echo escape($dashboardData['updateCheck']['error']); ?>">检查失败</span>
                                     <?php else: ?>

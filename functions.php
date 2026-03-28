@@ -84,6 +84,7 @@ function getLatestVersion(): ?array {
     }
     
     try {
+        /* 首先尝试从 Release API 获取 */
         $url = 'https://gitee.com/api/v5/repos/youruihu/hubbs/releases/latest';
         $context = stream_context_create([
             'http' => [
@@ -94,31 +95,93 @@ function getLatestVersion(): ?array {
         ]);
         
         $response = @file_get_contents($url, false, $context);
-        if ($response === false) {
-            return null;
+        
+        if ($response !== false) {
+            $data = json_decode($response, true);
+            if (isset($data['tag_name'])) {
+                $version = ltrim($data['tag_name'], 'vV');
+                $result = [
+                    'version' => $version,
+                    'name' => $data['name'] ?? '',
+                    'body' => $data['body'] ?? '',
+                    'published_at' => $data['published_at'] ?? '',
+                    'html_url' => $data['html_url'] ?? '',
+                    'source' => 'release'
+                ];
+                cacheSet($cacheKey, $result, 3600);
+                return $result;
+            }
         }
         
-        $data = json_decode($response, true);
-        if (!isset($data['tag_name'])) {
-            return null;
+        /* 如果没有 Release，尝试获取仓库信息 */
+        $repoUrl = 'https://gitee.com/api/v5/repos/youruihu/hubbs';
+        $repoResponse = @file_get_contents($repoUrl, false, $context);
+        
+        if ($repoResponse !== false) {
+            $repoData = json_decode($repoResponse, true);
+            if (isset($repoData['default_branch'])) {
+                $result = [
+                    'version' => HUBBS_VERSION, /* 没有发布版本时，使用当前版本 */
+                    'name' => $repoData['name'] ?? 'HuBBS',
+                    'body' => '请查看仓库获取最新更新',
+                    'published_at' => $repoData['updated_at'] ?? '',
+                    'html_url' => 'https://gitee.com/youruihu/hubbs',
+                    'source' => 'repo',
+                    'has_release' => false
+                ];
+                cacheSet($cacheKey, $result, 3600);
+                return $result;
+            }
         }
         
-        $version = ltrim($data['tag_name'], 'vV');
-        $result = [
-            'version' => $version,
-            'name' => $data['name'] ?? '',
-            'body' => $data['body'] ?? '',
-            'published_at' => $data['published_at'] ?? '',
-            'html_url' => $data['html_url'] ?? ''
-        ];
-        
-        /* 缓存1小时 */
-        cacheSet($cacheKey, $result, 3600);
-        
-        return $result;
+        return null;
     } catch (Exception $e) {
         return null;
     }
+}
+
+/**
+ * 检查本地代码是否与远程同步
+ * 通过比较本地和远程的 commit hash
+ * 
+ * @return array 同步状态
+ */
+function checkGitSync(): array {
+    $rootPath = dirname(__FILE__);
+    
+    /* 检查是否是 git 仓库 */
+    if (!is_dir($rootPath . '/.git')) {
+        return [
+            'is_git' => false,
+            'synced' => true,
+            'message' => '不是 Git 仓库'
+        ];
+    }
+    
+    /* 获取本地最新 commit */
+    $localCommit = trim(shell_exec('cd ' . escapeshellarg($rootPath) . ' && git rev-parse HEAD 2>/dev/null') ?? '');
+    
+    /* 获取远程最新 commit */
+    shell_exec('cd ' . escapeshellarg($rootPath) . ' && git fetch origin 2>/dev/null');
+    $remoteCommit = trim(shell_exec('cd ' . escapeshellarg($rootPath) . ' && git rev-parse origin/main 2>/dev/null') ?? '');
+    
+    if (empty($localCommit) || empty($remoteCommit)) {
+        return [
+            'is_git' => true,
+            'synced' => true,
+            'message' => '无法获取版本信息'
+        ];
+    }
+    
+    $synced = ($localCommit === $remoteCommit);
+    
+    return [
+        'is_git' => true,
+        'synced' => $synced,
+        'local_commit' => $localCommit,
+        'remote_commit' => $remoteCommit,
+        'message' => $synced ? '代码已是最新' : '有新的更新可用'
+    ];
 }
 
 /**
@@ -139,12 +202,48 @@ function compareVersions(string $version1, string $version2): int {
  */
 function checkForUpdate(): array {
     $currentVersion = HUBBS_VERSION;
+    
+    /* 首先检查 Git 同步状态 */
+    $gitSync = checkGitSync();
+    
+    /* 如果是 Git 仓库，优先使用 Git 同步状态判断 */
+    if ($gitSync['is_git']) {
+        return [
+            'has_update' => !$gitSync['synced'],
+            'current_version' => $currentVersion,
+            'latest_version' => $currentVersion,
+            'release_info' => [
+                'html_url' => 'https://gitee.com/youruihu/hubbs',
+                'published_at' => '',
+                'body' => $gitSync['message']
+            ],
+            'git_sync' => $gitSync,
+            'source' => 'git'
+        ];
+    }
+    
+    /* 如果不是 Git 仓库，尝试从 Gitee API 获取版本信息 */
     $latestInfo = getLatestVersion();
     
     if ($latestInfo === null) {
         return [
             'has_update' => false,
-            'error' => '无法获取版本信息'
+            'current_version' => $currentVersion,
+            'latest_version' => $currentVersion,
+            'release_info' => null,
+            'error' => '无法获取版本信息',
+            'source' => 'api'
+        ];
+    }
+    
+    /* 如果没有发布版本，显示为最新 */
+    if (isset($latestInfo['has_release']) && !$latestInfo['has_release']) {
+        return [
+            'has_update' => false,
+            'current_version' => $currentVersion,
+            'latest_version' => $currentVersion,
+            'release_info' => $latestInfo,
+            'source' => 'repo'
         ];
     }
     
@@ -155,7 +254,8 @@ function checkForUpdate(): array {
         'has_update' => $hasUpdate,
         'current_version' => $currentVersion,
         'latest_version' => $latestVersion,
-        'release_info' => $latestInfo
+        'release_info' => $latestInfo,
+        'source' => 'release'
     ];
 }
 
