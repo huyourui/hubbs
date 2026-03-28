@@ -393,22 +393,18 @@ $processedContent = renderPostContent(
                 <a href="<?php echo SITE_URL; ?>/pages/edit.php?id=<?php echo $post['id']; ?>" class="btn btn-outline-primary btn-sm">编辑</a>
             <?php endif; ?>
             <?php if (isAdmin()): ?>
-                <?php if ($post['is_sticky']): ?>
-                    <a href="<?php echo SITE_URL; ?>/pages/admin.php?toggle_sticky=<?php echo $post['id']; ?>" class="btn btn-outline-secondary btn-sm">取消置顶</a>
-                <?php else: ?>
-                    <a href="<?php echo SITE_URL; ?>/pages/admin.php?toggle_sticky=<?php echo $post['id']; ?>" class="btn btn-outline-success btn-sm">置顶</a>
-                <?php endif; ?>
-                <?php if (!empty($post['is_digest'])): ?>
-                    <a href="<?php echo SITE_URL; ?>/pages/post.php?id=<?php echo $post['id']; ?>&toggle_digest=1" class="btn btn-outline-secondary btn-sm">取消精华</a>
-                <?php else: ?>
-                    <a href="<?php echo SITE_URL; ?>/pages/post.php?id=<?php echo $post['id']; ?>&toggle_digest=1" class="btn btn-outline-info btn-sm">精华</a>
-                <?php endif; ?>
-                <?php if ($post['is_locked']): ?>
-                    <a href="<?php echo SITE_URL; ?>/pages/admin.php?toggle_lock=<?php echo $post['id']; ?>" class="btn btn-outline-success btn-sm">解锁</a>
-                <?php else: ?>
-                    <a href="<?php echo SITE_URL; ?>/pages/admin.php?toggle_lock=<?php echo $post['id']; ?>" class="btn btn-outline-warning btn-sm">锁定</a>
-                <?php endif; ?>
-                <a href="<?php echo SITE_URL; ?>/pages/admin.php?delete_post=<?php echo $post['id']; ?>" class="btn btn-outline-danger btn-sm" onclick="return confirm('确定要删除这篇帖子吗？')">删除</a>
+                <div class="dropdown d-inline-block">
+                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        操作
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="<?php echo SITE_URL; ?>/pages/admin.php?toggle_sticky=<?php echo $post['id']; ?>"><?php echo $post['is_sticky'] ? '取消置顶' : '设为置顶'; ?></a></li>
+                        <li><a class="dropdown-item" href="<?php echo SITE_URL; ?>/pages/post.php?id=<?php echo $post['id']; ?>&toggle_digest=1"><?php echo !empty($post['is_digest']) ? '取消精华' : '设为精华'; ?></a></li>
+                        <li><a class="dropdown-item" href="<?php echo SITE_URL; ?>/pages/admin.php?toggle_lock=<?php echo $post['id']; ?>"><?php echo $post['is_locked'] ? '解锁帖子' : '锁定帖子'; ?></a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="<?php echo SITE_URL; ?>/pages/admin.php?delete_post=<?php echo $post['id']; ?>" onclick="return confirm('确定要删除这篇帖子吗？')">删除帖子</a></li>
+                    </ul>
+                </div>
             <?php endif; ?>
         </div>
     </div>
