@@ -1465,16 +1465,23 @@ function uploadAttachment(array $file, int $userId): array {
         return ['success' => false, 'errors' => $errors];
     }
     
+    /* 按日期创建子目录 */
+    $dateDir = date('Ymd');
     $filename = date('YmdHis') . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
-    $uploadDir = __DIR__ . '/uploads/attachments/';
+    $uploadDir = __DIR__ . '/uploads/attachments/' . $dateDir;
     
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0755, true);
     }
     
-    $filePath = $uploadDir . $filename;
+    /* 检查目录是否可写 */
+    if (!is_writable($uploadDir)) {
+        @chmod($uploadDir, 0777);
+    }
+    
+    $filePath = $uploadDir . '/' . $filename;
     if (!move_uploaded_file($file['tmp_name'], $filePath)) {
-        $errors[] = '文件保存失败';
+        $errors[] = '文件保存失败，请检查目录权限';
         return ['success' => false, 'errors' => $errors];
     }
     
@@ -1484,7 +1491,7 @@ function uploadAttachment(array $file, int $userId): array {
         $userId,
         $filename,
         $file['name'],
-        $filePath,
+        'uploads/attachments/' . $dateDir . '/' . $filename,
         $file['size'],
         $ext,
         $file['type']
@@ -1704,9 +1711,12 @@ function uploadImage(array $file, int $userId): array {
         return ['success' => false, 'error' => '不支持的图片格式，仅支持 JPG、PNG、GIF、WEBP'];
     }
     
+    /* 按日期创建子目录 */
+    $dateDir = date('Ymd');
     $filename = date('YmdHis') . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
-    /* 上传目录位于 uploads/images */
-    $uploadDir = __DIR__ . '/uploads/images';
+    
+    /* 上传目录位于 uploads/images/日期 */
+    $uploadDir = __DIR__ . '/uploads/images/' . $dateDir;
     $thumbDir = $uploadDir . '/thumbs';
     
     /* 如果目录不存在，尝试创建 */
@@ -1776,8 +1786,8 @@ function uploadImage(array $file, int $userId): array {
         $userId,
         $filename,
         $file['name'],
-        'uploads/images/' . $filename,
-        'uploads/images/thumbs/' . $filename,
+        'uploads/images/' . $dateDir . '/' . $filename,
+        'uploads/images/' . $dateDir . '/thumbs/' . $filename,
         $file['size'],
         $width,
         $height,
@@ -1791,8 +1801,8 @@ function uploadImage(array $file, int $userId): array {
         'image' => [
             'id' => $imageId,
             'filename' => $filename,
-            'url' => SITE_URL . '/uploads/images/' . $filename,
-            'thumb_url' => SITE_URL . '/uploads/images/thumbs/' . $filename,
+            'url' => SITE_URL . '/uploads/images/' . $dateDir . '/' . $filename,
+            'thumb_url' => SITE_URL . '/uploads/images/' . $dateDir . '/thumbs/' . $filename,
             'width' => $width,
             'height' => $height
         ]
