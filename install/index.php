@@ -9,7 +9,7 @@
  */
 session_start();
 
-define('HUBBS_VERSION', '1.0.0');
+define('HUBBS_VERSION', '1.1.0');
 define('HUBBS_NAME', 'HuBBS');
 
 /* 安装程序根目录绝对路径 */

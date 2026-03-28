@@ -18,7 +18,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 /* 定义系统版本信息 */
 if (!defined('HUBBS_VERSION')) {
-    define('HUBBS_VERSION', '1.0.0');
+    define('HUBBS_VERSION', '1.1.0');
 }
 if (!defined('HUBBS_NAME')) {
     define('HUBBS_NAME', 'HuBBS');
