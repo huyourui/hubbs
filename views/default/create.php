@@ -47,6 +47,8 @@ CSS;
 $jsMaxPostLength = $maxPostLength;
 $jsMaxImageSize = $maxImageSize;
 $jsMaxImageSizeMB = $maxImageSizeMB;
+$jsAttachmentMaxCount = $attachmentMaxCount;
+$jsAttachmentMaxSize = $attachmentMaxSize;
 
 $GLOBALS['extraScripts'] = <<<JS
 document.addEventListener('DOMContentLoaded', function() {
@@ -56,6 +58,8 @@ document.addEventListener('DOMContentLoaded', function() {
     var maxLength = {$jsMaxPostLength};
     var maxImageSize = {$jsMaxImageSize};
     var maxImageSizeMB = '{$jsMaxImageSizeMB}';
+    var maxAttachmentCount = {$jsAttachmentMaxCount};
+    var maxAttachmentSize = {$jsAttachmentMaxSize};
     var uploadedImages = [];
     var insertedImages = [];
     
@@ -491,8 +495,6 @@ document.addEventListener('DOMContentLoaded', function() {
     var attachmentList = document.getElementById('attachment-list');
     var attachmentIdsInput = document.getElementById('attachment_ids');
     var uploadedAttachments = [];
-    var maxAttachmentCount = {$attachmentMaxCount};
-    var maxAttachmentSize = {$attachmentMaxSize};
     
     if (attachmentInput) {
         attachmentInput.addEventListener('change', function() {
