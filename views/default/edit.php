@@ -7,9 +7,14 @@
  * @website https://huyourui.com
  * @license MIT License
  */
-$maxPostLength = (int)getSetting('max_post_length', '10000');
-$maxImageSize = getMaxImageSize();
-$maxImageSizeMB = round($maxImageSize / 1024 / 1024, 1);
+
+/* 确保变量有默认值 */
+if (!isset($maxPostLength)) $maxPostLength = (int)getSetting('max_post_length', '10000');
+if (!isset($maxImageSize)) $maxImageSize = getMaxImageSize();
+if (!isset($maxImageSizeMB)) $maxImageSizeMB = round($maxImageSize / 1024 / 1024, 1);
+if (!isset($attachmentMaxCount)) $attachmentMaxCount = getAttachmentMaxCount();
+if (!isset($attachmentMaxSize)) $attachmentMaxSize = getAttachmentMaxSize();
+if (!isset($allowedAttachmentExts)) $allowedAttachmentExts = getAttachmentAllowedExts();
 
 $GLOBALS['extraStyles'] = <<<CSS
 .container { max-width: 900px; }
@@ -789,7 +794,7 @@ JS;
                             <?php endif; ?>
                         </div>
                         <input type="hidden" id="attachment_ids" name="attachment_ids" value="<?php echo !empty($postAttachments) ? implode(',', array_column($postAttachments, 'id')) : ''; ?>">
-                        <small class="text-muted">支持 <?php echo implode(', ', $attachmentAllowedExts); ?> 格式，单个最大 <?php echo formatFileSize($attachmentMaxSize); ?>，最多 <?php echo $attachmentMaxCount; ?> 个</small>
+                        <small class="text-muted">支持 <?php echo implode(', ', $allowedAttachmentExts); ?> 格式，单个最大 <?php echo formatFileSize($attachmentMaxSize); ?>，最多 <?php echo $attachmentMaxCount; ?> 个</small>
                     </div>
                     
                     <div class="mb-3">

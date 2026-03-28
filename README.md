@@ -1,6 +1,6 @@
 # HuBBS - 一款基于MIT协议的开源论坛
 
-![Version](https://img.shields.io/badge/version-1.4.1-blue.svg)
+![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![PHP](https://img.shields.io/badge/PHP-%3E%3D7.4-purple.svg)
 ![MySQL](https://img.shields.io/badge/MySQL-%3E%3D5.7-orange.svg)
@@ -206,13 +206,6 @@ hubbs/
 ---
 
 ## 📝 更新日志
-
-### v1.4.1 (2026-03-28)
-
-**Bug修复**
-- 修复根目录和子目录安装的路径兼容性问题
-- 修复发帖页面未定义变量错误
-- 修复发帖页面变量名不一致导致的样式错乱问题
 
 ### v1.4.0 (2026-03-28)
 

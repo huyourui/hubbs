@@ -63,15 +63,9 @@ function getCurrentUser(): ?array {
 }
 
 function redirect(string $url): void {
-    /* 如果URL不是绝对路径 */
-    if (!preg_match('/^https?:\/\//i', $url)) {
-        /* 如果 ROOT_PATH 不为空且 URL 不以 ROOT_PATH 开头，则添加 ROOT_PATH */
-        if (defined('ROOT_PATH') && ROOT_PATH !== '' && strpos($url, ROOT_PATH) !== 0) {
-            $url = ROOT_PATH . '/' . ltrim($url, '/');
-        } elseif (ROOT_PATH === '' && $url[0] !== '/') {
-            /* 根目录安装时，确保 URL 以 / 开头 */
-            $url = '/' . ltrim($url, '/');
-        }
+    /* 如果URL不是绝对路径且不以ROOT_PATH开头，则添加ROOT_PATH */
+    if (!preg_match('/^https?:\/\//i', $url) && defined('ROOT_PATH') && strpos($url, ROOT_PATH) !== 0) {
+        $url = ROOT_PATH . '/' . ltrim($url, '/');
     }
     header("Location: $url");
     exit;
@@ -436,10 +430,6 @@ function pageUrl(string $page, array $params = []): string {
  */
 function siteUrl(string $path = ''): string {
     $path = ltrim($path, '/');
-    if (ROOT_PATH === '') {
-        /* 根目录安装 */
-        return SITE_URL . ($path ? '/' . $path : '');
-    }
     return SITE_URL . ($path ? '/' . $path : '');
 }
 

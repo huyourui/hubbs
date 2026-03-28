@@ -7,9 +7,14 @@
  * @website https://huyourui.com
  * @license MIT License
  */
-$maxPostLength = (int)getSetting('max_post_length', '10000');
-$maxImageSize = getMaxImageSize();
-$maxImageSizeMB = round($maxImageSize / 1024 / 1024, 1);
+
+/* 确保变量有默认值 */
+if (!isset($maxPostLength)) $maxPostLength = (int)getSetting('max_post_length', '10000');
+if (!isset($maxImageSize)) $maxImageSize = getMaxImageSize();
+if (!isset($maxImageSizeMB)) $maxImageSizeMB = round($maxImageSize / 1024 / 1024, 1);
+if (!isset($attachmentMaxCount)) $attachmentMaxCount = getAttachmentMaxCount();
+if (!isset($attachmentMaxSize)) $attachmentMaxSize = getAttachmentMaxSize();
+if (!isset($allowedAttachmentExts)) $allowedAttachmentExts = getAttachmentAllowedExts();
 
 $GLOBALS['extraStyles'] = <<<CSS
 .container { max-width: 900px; }
