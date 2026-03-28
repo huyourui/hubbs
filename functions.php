@@ -1210,12 +1210,10 @@ function markPostNotificationsAsRead(int $postId, int $userId): bool {
         SET is_read = 1 
         WHERE user_id = ? 
         AND is_read = 0 
-        AND (
-            JSON_EXTRACT(data, '$.post_id') = ?
-            OR JSON_EXTRACT(data, '$.post_id') = CAST(? AS JSON)
-        )
+        AND data LIKE ?
     ");
-    return $stmt->execute([$userId, $postId, $postId]);
+    $postIdStr = '%\"post_id\":' . $postId . '%';
+    return $stmt->execute([$userId, $postIdStr]);
 }
 
 function getNotificationTypeLabel(string $type): string {
