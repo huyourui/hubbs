@@ -65,6 +65,30 @@ if ($tab === 'dashboard') {
     $dashboardData['maxPostSize'] = ini_get('post_max_size');
     $dashboardData['memoryLimit'] = ini_get('memory_limit');
     $dashboardData['hubbsVersion'] = defined('HUBBS_VERSION') ? HUBBS_VERSION : '1.0.0';
+    
+    /* 检查是否有更新 */
+    $dashboardData['updateCheck'] = checkForUpdate();
+}
+
+/* 处理系统更新 */
+if (isset($_GET['do_update']) && isAdmin()) {
+    $updateResult = executeUpdate();
+    if ($updateResult['success']) {
+        flashMessage('系统更新成功！版本已更新到最新。', 'success');
+    } else {
+        flashMessage('更新失败：' . $updateResult['error'], 'error');
+    }
+    redirect('pages/admin.php?tab=dashboard');
+}
+
+/* 处理清理缓存 */
+if (isset($_GET['clear_cache']) && isAdmin()) {
+    if (clearAllCache()) {
+        flashMessage('缓存清理成功！', 'success');
+    } else {
+        flashMessage('缓存清理失败，请检查目录权限。', 'error');
+    }
+    redirect('pages/admin.php?tab=dashboard');
 }
 
 if (isset($_POST['batch_delete_posts']) && isAdmin()) {

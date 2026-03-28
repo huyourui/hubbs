@@ -105,6 +105,29 @@ CSS;
                         </div>
                     </div>
                     
+                    <?php if (!empty($dashboardData['updateCheck']['has_update'])): ?>
+                    <div class="alert alert-warning d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <strong><i class="bi bi-arrow-up-circle"></i> 发现新版本！</strong>
+                            当前版本：<?php echo escape($dashboardData['updateCheck']['current_version']); ?> → 
+                            最新版本：<strong><?php echo escape($dashboardData['updateCheck']['latest_version']); ?></strong>
+                            <?php if (!empty($dashboardData['updateCheck']['release_info']['published_at'])): ?>
+                                <small class="text-muted ms-2">发布于 <?php echo date('Y-m-d', strtotime($dashboardData['updateCheck']['release_info']['published_at'])); ?></small>
+                            <?php endif; ?>
+                        </div>
+                        <div>
+                            <a href="<?php echo SITE_URL; ?>/pages/admin.php?do_update=1" class="btn btn-warning btn-sm" onclick="return confirm('确定要更新系统吗？更新过程中可能会短暂影响网站访问。')">
+                                <i class="bi bi-download"></i> 立即更新
+                            </a>
+                            <?php if (!empty($dashboardData['updateCheck']['release_info']['html_url'])): ?>
+                                <a href="<?php echo escape($dashboardData['updateCheck']['release_info']['html_url']); ?>" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                    查看详情
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                    
                     <div class="row mb-4">
                         <div class="col-md-4 mb-3">
                             <div class="card">
@@ -174,7 +197,16 @@ CSS;
                         <tbody>
                             <tr>
                                 <td width="150">HuBBS 版本</td>
-                                <td><?php echo escape($dashboardData['hubbsVersion']); ?></td>
+                                <td>
+                                    <?php echo escape($dashboardData['hubbsVersion']); ?>
+                                    <?php if (!empty($dashboardData['updateCheck']['has_update'])): ?>
+                                        <span class="badge bg-warning text-dark ms-1">有更新</span>
+                                    <?php elseif (isset($dashboardData['updateCheck']['error'])): ?>
+                                        <span class="badge bg-secondary ms-1" title="<?php echo escape($dashboardData['updateCheck']['error']); ?>">检查失败</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-success ms-1">最新</span>
+                                    <?php endif; ?>
+                                </td>
                                 <td width="150">服务器时间</td>
                                 <td><?php echo escape($dashboardData['serverTime']); ?></td>
                             </tr>
@@ -204,6 +236,12 @@ CSS;
                             </tr>
                         </tbody>
                     </table>
+                    
+                    <div class="mt-3">
+                        <a href="<?php echo SITE_URL; ?>/pages/admin.php?clear_cache=1" class="btn btn-outline-secondary btn-sm" onclick="return confirm('确定要清理所有缓存吗？')">
+                            <i class="bi bi-trash"></i> 清理缓存
+                        </a>
+                    </div>
 
                 <?php elseif ($tab === 'posts'): ?>
                     <h4 class="mb-4">帖子管理</h4>

@@ -72,6 +72,169 @@ function redirect(string $url): void {
 }
 
 /**
+ * 从 Gitee 获取最新版本信息
+ * 
+ * @return array|null 版本信息数组，失败返回 null
+ */
+function getLatestVersion(): ?array {
+    $cacheKey = 'gitee_latest_version';
+    $cached = cacheGet($cacheKey);
+    if ($cached !== null) {
+        return $cached;
+    }
+    
+    try {
+        $url = 'https://gitee.com/api/v5/repos/youruihu/hubbs/releases/latest';
+        $context = stream_context_create([
+            'http' => [
+                'timeout' => 10,
+                'method' => 'GET',
+                'header' => "User-Agent: HuBBS/" . HUBBS_VERSION . "\r\n"
+            ]
+        ]);
+        
+        $response = @file_get_contents($url, false, $context);
+        if ($response === false) {
+            return null;
+        }
+        
+        $data = json_decode($response, true);
+        if (!isset($data['tag_name'])) {
+            return null;
+        }
+        
+        $version = ltrim($data['tag_name'], 'vV');
+        $result = [
+            'version' => $version,
+            'name' => $data['name'] ?? '',
+            'body' => $data['body'] ?? '',
+            'published_at' => $data['published_at'] ?? '',
+            'html_url' => $data['html_url'] ?? ''
+        ];
+        
+        /* 缓存1小时 */
+        cacheSet($cacheKey, $result, 3600);
+        
+        return $result;
+    } catch (Exception $e) {
+        return null;
+    }
+}
+
+/**
+ * 比较版本号
+ * 
+ * @param string $version1 版本1
+ * @param string $version2 版本2
+ * @return int 1表示version1>version2，-1表示<，0表示相等
+ */
+function compareVersions(string $version1, string $version2): int {
+    return version_compare($version1, $version2);
+}
+
+/**
+ * 检查是否有新版本
+ * 
+ * @return array 检查结果
+ */
+function checkForUpdate(): array {
+    $currentVersion = HUBBS_VERSION;
+    $latestInfo = getLatestVersion();
+    
+    if ($latestInfo === null) {
+        return [
+            'has_update' => false,
+            'error' => '无法获取版本信息'
+        ];
+    }
+    
+    $latestVersion = $latestInfo['version'];
+    $hasUpdate = compareVersions($latestVersion, $currentVersion) > 0;
+    
+    return [
+        'has_update' => $hasUpdate,
+        'current_version' => $currentVersion,
+        'latest_version' => $latestVersion,
+        'release_info' => $latestInfo
+    ];
+}
+
+/**
+ * 执行系统更新（git pull）
+ * 
+ * @return array 更新结果
+ */
+function executeUpdate(): array {
+    $rootPath = dirname(__FILE__);
+    
+    /* 检查是否是 git 仓库 */
+    if (!is_dir($rootPath . '/.git')) {
+        return [
+            'success' => false,
+            'error' => '不是 Git 仓库，无法自动更新'
+        ];
+    }
+    
+    /* 执行 git fetch 和 git pull */
+    $commands = [
+        'cd ' . escapeshellarg($rootPath) . ' && git fetch origin 2>&1',
+        'cd ' . escapeshellarg($rootPath) . ' && git reset --hard origin/main 2>&1'
+    ];
+    
+    $output = [];
+    foreach ($commands as $command) {
+        $result = shell_exec($command);
+        $output[] = $result;
+    }
+    
+    /* 检查是否成功 */
+    $lastOutput = implode("\n", $output);
+    if (strpos($lastOutput, 'fatal:') !== false || strpos($lastOutput, 'error:') !== false) {
+        return [
+            'success' => false,
+            'error' => '更新失败：' . $lastOutput,
+            'output' => $output
+        ];
+    }
+    
+    /* 清理缓存 */
+    clearAllCache();
+    
+    /* 清除版本缓存 */
+    cacheDelete('gitee_latest_version');
+    
+    return [
+        'success' => true,
+        'message' => '更新成功',
+        'output' => $output
+    ];
+}
+
+/**
+ * 清理所有缓存
+ * 
+ * @return bool 是否成功
+ */
+function clearAllCache(): bool {
+    $cacheDir = dirname(__FILE__) . '/cache';
+    
+    if (!is_dir($cacheDir)) {
+        return true;
+    }
+    
+    $files = glob($cacheDir . '/*.cache');
+    $success = true;
+    
+    foreach ($files as $file) {
+        if (!@unlink($file)) {
+            $success = false;
+        }
+    }
+    
+    return $success;
+}
+
+/**
  * 解析IP地址获取地理位置
  * 使用免费的IP地址解析API
  * 
