@@ -107,6 +107,6 @@ render('create', [
     'categories' => $categories,
     'attachmentMaxCount' => $attachmentMaxCount,
     'attachmentMaxSize' => $attachmentMaxSize,
-    'attachmentAllowedExts' => $attachmentAllowedExts,
+    'allowedAttachmentExts' => $allowedAttachmentExts,
     'pageTitle' => '发帖 - ' . getSetting('site_title', SITE_NAME)
 ]);

@@ -851,7 +851,7 @@ JS;
                         <input type="file" id="attachment-input" multiple class="form-control">
                         <div id="attachment-list" class="mt-2"></div>
                         <input type="hidden" id="attachment_ids" name="attachment_ids" value="">
-                        <small class="text-muted">支持 <?php echo implode(', ', $attachmentAllowedExts); ?> 格式，单个最大 <?php echo formatFileSize($attachmentMaxSize); ?>，最多 <?php echo $attachmentMaxCount; ?> 个</small>
+                        <small class="text-muted">支持 <?php echo implode(', ', $allowedAttachmentExts); ?> 格式，单个最大 <?php echo formatFileSize($attachmentMaxSize); ?>，最多 <?php echo $attachmentMaxCount; ?> 个</small>
                     </div>
                     
                     <div class="mb-3">
