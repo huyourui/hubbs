@@ -916,7 +916,7 @@ function renderComments(array $comments, int $postId, bool $isLocked = false): s
     foreach ($comments as $comment) {
         $html .= '<div class="comment-main" id="comment-' . $comment['id'] . '">';
         $html .= '<div class="comment-author">';
-        $html .= '<a href="' . SITE_URL . '/profile.php?user=' . $comment['user_id'] . '">' . escape($comment['username']) . '</a>';
+        $html .= '<a href="' . SITE_URL . '/pages/profile.php?user=' . $comment['user_id'] . '">' . escape($comment['username']) . '</a>';
         $html .= '<span class="comment-time">' . formatTime($comment['created_at']) . '</span>';
         $html .= '</div>';
         $html .= '<div class="comment-text">' . nl2br(escape($comment['content'])) . '</div>';
@@ -925,11 +925,11 @@ function renderComments(array $comments, int $postId, bool $isLocked = false): s
             $html .= '<a href="#" class="reply-btn" data-comment-id="' . $comment['id'] . '" data-username="' . escape($comment['username']) . '">回复</a>';
         }
         if (isLoggedIn() && ($_SESSION['user_id'] == $comment['user_id'] || isAdmin())) {
-            $html .= '<a href="' . SITE_URL . '/post.php?id=' . $postId . '&delete_comment=' . $comment['id'] . '" onclick="return confirm(\'确定要删除此评论吗？\')">删除</a>';
+            $html .= '<a href="' . SITE_URL . '/pages/post.php?id=' . $postId . '&delete_comment=' . $comment['id'] . '" onclick="return confirm(\'确定要删除此评论吗？\')">删除</a>';
         }
         $html .= '</div>';
         $html .= '<div class="reply-form" id="reply-form-' . $comment['id'] . '">';
-        $html .= '<form method="POST" action="' . SITE_URL . '/post.php?id=' . $postId . '">';
+        $html .= '<form method="POST" action="' . SITE_URL . '/pages/post.php?id=' . $postId . '">';
         $html .= '<input type="hidden" name="parent_id" value="' . $comment['id'] . '">';
         $html .= '<input type="hidden" name="reply_to_user_id" value="' . $comment['user_id'] . '">';
         $html .= '<textarea name="content" placeholder="回复 @' . escape($comment['username']) . '..." required></textarea>';
@@ -939,9 +939,9 @@ function renderComments(array $comments, int $postId, bool $isLocked = false): s
             $html .= '<div class="comment-replies">';
             foreach ($comment['children'] as $reply) {
                 $html .= '<div class="reply-item" id="comment-' . $reply['id'] . '">';
-                $html .= '<span class="reply-author"><a href="' . SITE_URL . '/profile.php?user=' . $reply['user_id'] . '">' . escape($reply['username']) . '</a></span>';
+                $html .= '<span class="reply-author"><a href="' . SITE_URL . '/pages/profile.php?user=' . $reply['user_id'] . '">' . escape($reply['username']) . '</a></span>';
                 if (!empty($reply['reply_to_username'])) {
-                    $html .= '<span class="reply-to">回复 <a href="' . SITE_URL . '/profile.php?user=' . $reply['reply_to_user_id'] . '">@' . escape($reply['reply_to_username']) . '</a></span>：';
+                    $html .= '<span class="reply-to">回复 <a href="' . SITE_URL . '/pages/profile.php?user=' . $reply['reply_to_user_id'] . '">@' . escape($reply['reply_to_username']) . '</a></span>：';
                 }
                 $html .= '<span class="reply-text">' . nl2br(escape($reply['content'])) . '</span>';
                 $html .= '<span class="reply-time">' . formatTime($reply['created_at']) . '</span>';
@@ -950,7 +950,7 @@ function renderComments(array $comments, int $postId, bool $isLocked = false): s
                     $html .= '<a href="#" class="reply-btn" data-comment-id="' . $comment['id'] . '" data-username="' . escape($reply['username']) . '" data-reply-to-id="' . $reply['user_id'] . '">回复</a>';
                 }
                 if (isLoggedIn() && ($_SESSION['user_id'] == $reply['user_id'] || isAdmin())) {
-                    $html .= '<a href="' . SITE_URL . '/post.php?id=' . $postId . '&delete_comment=' . $reply['id'] . '" onclick="return confirm(\'确定要删除此评论吗？\')">删除</a>';
+                    $html .= '<a href="' . SITE_URL . '/pages/post.php?id=' . $postId . '&delete_comment=' . $reply['id'] . '" onclick="return confirm(\'确定要删除此评论吗？\')">删除</a>';
                 }
                 $html .= '</span></div>';
             }
