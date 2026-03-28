@@ -278,9 +278,9 @@ $processedContent = renderPostContent(
 
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="<?php echo SITE_URL; ?>/index.php">首页</a></li>
+        <li class="breadcrumb-item"><a href="<?php echo SITE_URL; ?>/">首页</a></li>
         <?php if ($post['category_id']): ?>
-            <li class="breadcrumb-item"><a href="<?php echo SITE_URL; ?>/index.php?category=<?php echo $post['category_id']; ?>"><?php echo escape($post['category_name']); ?></a></li>
+            <li class="breadcrumb-item"><a href="<?php echo SITE_URL; ?>/?category=<?php echo $post['category_id']; ?>"><?php echo escape($post['category_name']); ?></a></li>
         <?php endif; ?>
         <li class="breadcrumb-item active"><?php echo escape(mb_substr($post['title'], 0, 50)); ?></li>
     </ol>
@@ -301,7 +301,7 @@ $processedContent = renderPostContent(
             <?php echo escape($post['title']); ?>
         </h1>
         <div class="text-muted mb-3">
-            <span class="me-3">作者: <a href="<?php echo SITE_URL; ?>/profile.php?user=<?php echo $post['user_id']; ?>"><?php echo escape($post['username']); ?></a>
+            <span class="me-3">作者: <a href="<?php echo SITE_URL; ?>/pages/profile.php?user=<?php echo $post['user_id']; ?>"><?php echo escape($post['username']); ?></a>
                 <span class="badge bg-info ms-1"><?php echo getUserLevelName($post['points'] ?? 0); ?></span>
             </span>
             <span class="me-3">分类: <?php echo escape($post['category_name'] ?? '未分类'); ?></span>
@@ -309,7 +309,7 @@ $processedContent = renderPostContent(
             <span class="me-3">回复: <?php echo $post['comment_count']; ?></span>
             <span class="me-3">发布: <?php echo date('Y-m-d H:i', strtotime($post['created_at'])); ?></span>
             <?php if (!empty($post['ip_address'])): ?>
-            <span class="text-muted small">IP: <?php echo escape(maskIP($post['ip_address'])); ?></span>
+            <span class="text-muted small">地区: <?php echo escape(parseIpAddress($post['ip_address'], true)); ?></span>
             <?php endif; ?>
         </div>
         <div class="post-content">
@@ -350,7 +350,7 @@ $processedContent = renderPostContent(
                             <small class="text-muted ms-2">下载: <?php echo $attachment['download_count']; ?> 次</small>
                         </div>
                         <?php if ($canDownloadAttachment): ?>
-                            <a href="<?php echo SITE_URL; ?>/download.php?id=<?php echo $attachment['id']; ?>" class="btn btn-sm btn-primary">下载</a>
+                            <a href="<?php echo SITE_URL; ?>/pages/download.php?id=<?php echo $attachment['id']; ?>" class="btn btn-sm btn-primary">下载</a>
                         <?php else: ?>
                             <span class="text-muted small">登录后可下载</span>
                         <?php endif; ?>
@@ -362,33 +362,33 @@ $processedContent = renderPostContent(
         
         <div class="post-actions">
             <?php if (isLoggedIn()): ?>
-                <a href="<?php echo SITE_URL; ?>/post.php?id=<?php echo $post['id']; ?>&toggle_like=1" id="like-button" class="btn btn-sm <?php echo $isLiked ? 'btn-primary' : 'btn-outline-primary'; ?>">
+                <a href="<?php echo SITE_URL; ?>/pages/post.php?id=<?php echo $post['id']; ?>&toggle_like=1" id="like-button" class="btn btn-sm <?php echo $isLiked ? 'btn-primary' : 'btn-outline-primary'; ?>">
                     <?php echo $isLiked ? '已点赞' : '点赞'; ?> (<span id="like-count"><?php echo $likeCount; ?></span>)
                 </a>
-                <a href="<?php echo SITE_URL; ?>/post.php?id=<?php echo $post['id']; ?>&toggle_favorite=1" id="favorite-button" class="btn btn-sm <?php echo $isFavorited ? 'btn-warning' : 'btn-outline-warning'; ?>">
+                <a href="<?php echo SITE_URL; ?>/pages/post.php?id=<?php echo $post['id']; ?>&toggle_favorite=1" id="favorite-button" class="btn btn-sm <?php echo $isFavorited ? 'btn-warning' : 'btn-outline-warning'; ?>">
                     <?php echo $isFavorited ? '取消收藏' : '收藏'; ?> (<span id="favorite-count"><?php echo $favoriteCount; ?></span>)
                 </a>
             <?php endif; ?>
             <?php if (isLoggedIn() && (($_SESSION['user_id'] == $post['user_id'] && !$post['is_locked']) || isAdmin())): ?>
-                <a href="<?php echo SITE_URL; ?>/edit.php?id=<?php echo $post['id']; ?>" class="btn btn-outline-primary btn-sm">编辑</a>
+                <a href="<?php echo SITE_URL; ?>/pages/edit.php?id=<?php echo $post['id']; ?>" class="btn btn-outline-primary btn-sm">编辑</a>
             <?php endif; ?>
             <?php if (isAdmin()): ?>
                 <?php if ($post['is_sticky']): ?>
-                    <a href="<?php echo SITE_URL; ?>/admin.php?toggle_sticky=<?php echo $post['id']; ?>" class="btn btn-outline-secondary btn-sm">取消置顶</a>
+                    <a href="<?php echo SITE_URL; ?>/pages/admin.php?toggle_sticky=<?php echo $post['id']; ?>" class="btn btn-outline-secondary btn-sm">取消置顶</a>
                 <?php else: ?>
-                    <a href="<?php echo SITE_URL; ?>/admin.php?toggle_sticky=<?php echo $post['id']; ?>" class="btn btn-outline-success btn-sm">置顶</a>
+                    <a href="<?php echo SITE_URL; ?>/pages/admin.php?toggle_sticky=<?php echo $post['id']; ?>" class="btn btn-outline-success btn-sm">置顶</a>
                 <?php endif; ?>
                 <?php if (!empty($post['is_digest'])): ?>
-                    <a href="<?php echo SITE_URL; ?>/post.php?id=<?php echo $post['id']; ?>&toggle_digest=1" class="btn btn-outline-secondary btn-sm">取消精华</a>
+                    <a href="<?php echo SITE_URL; ?>/pages/post.php?id=<?php echo $post['id']; ?>&toggle_digest=1" class="btn btn-outline-secondary btn-sm">取消精华</a>
                 <?php else: ?>
-                    <a href="<?php echo SITE_URL; ?>/post.php?id=<?php echo $post['id']; ?>&toggle_digest=1" class="btn btn-outline-info btn-sm">精华</a>
+                    <a href="<?php echo SITE_URL; ?>/pages/post.php?id=<?php echo $post['id']; ?>&toggle_digest=1" class="btn btn-outline-info btn-sm">精华</a>
                 <?php endif; ?>
                 <?php if ($post['is_locked']): ?>
-                    <a href="<?php echo SITE_URL; ?>/admin.php?toggle_lock=<?php echo $post['id']; ?>" class="btn btn-outline-success btn-sm">解锁</a>
+                    <a href="<?php echo SITE_URL; ?>/pages/admin.php?toggle_lock=<?php echo $post['id']; ?>" class="btn btn-outline-success btn-sm">解锁</a>
                 <?php else: ?>
-                    <a href="<?php echo SITE_URL; ?>/admin.php?toggle_lock=<?php echo $post['id']; ?>" class="btn btn-outline-warning btn-sm">锁定</a>
+                    <a href="<?php echo SITE_URL; ?>/pages/admin.php?toggle_lock=<?php echo $post['id']; ?>" class="btn btn-outline-warning btn-sm">锁定</a>
                 <?php endif; ?>
-                <a href="<?php echo SITE_URL; ?>/admin.php?delete_post=<?php echo $post['id']; ?>" class="btn btn-outline-danger btn-sm" onclick="return confirm('确定要删除这篇帖子吗？')">删除</a>
+                <a href="<?php echo SITE_URL; ?>/pages/admin.php?delete_post=<?php echo $post['id']; ?>" class="btn btn-outline-danger btn-sm" onclick="return confirm('确定要删除这篇帖子吗？')">删除</a>
             <?php endif; ?>
         </div>
     </div>
@@ -426,7 +426,7 @@ $processedContent = renderPostContent(
         <?php elseif (!isLoggedIn()): ?>
             <hr class="my-4">
             <p class="text-center text-muted">
-                <a href="<?php echo SITE_URL; ?>/login.php">登录</a> 后参与讨论
+                <a href="<?php echo SITE_URL; ?>/pages/login.php">登录</a> 后参与讨论
             </p>
         <?php endif; ?>
     </div>

@@ -7,12 +7,12 @@
  * @website https://huyourui.com
  * @license MIT License
  */
-require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/../functions.php';
 
 if (!isLoggedIn()) {
     $_SESSION['redirect_after_login'] = 'create.php';
     flashMessage('请先登录', 'info');
-    redirect('login.php');
+    redirect('pages/login.php');
 }
 
 $errors = [];
@@ -92,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             addPoints($_SESSION['user_id'], 'create_post', 'post', $postId, '发布帖子：' . mb_substr($title, 0, 50));
             flashMessage('帖子发布成功', 'success');
-            redirect('post.php?id=' . $postId);
+            redirect('pages/post.php?id=' . $postId);
         } else {
             $errors[] = '发布失败，请稍后重试';
         }

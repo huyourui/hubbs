@@ -40,14 +40,14 @@ CSS;
         <div class="card">
             <div class="card-body">
                 <div class="category-filter mb-3">
-                    <a href="<?php echo SITE_URL; ?>/index.php" class="badge <?php echo !$categoryId ? 'bg-primary text-white' : 'bg-light text-dark text-decoration-none'; ?>">全部</a>
+                    <a href="<?php echo SITE_URL; ?>/" class="badge <?php echo !$categoryId ? 'bg-primary text-white' : 'bg-light text-dark text-decoration-none'; ?>">全部</a>
                     <?php foreach ($categoryTree as $cat): ?>
                         <?php if (!empty($cat['children'])): ?>
-                            <a href="<?php echo SITE_URL; ?>/index.php?category=<?php echo $cat['id']; ?>" class="badge <?php echo ($currentParentId == $cat['id'] || $categoryId == $cat['id']) ? 'bg-primary text-white' : 'bg-light text-dark text-decoration-none'; ?>">
+                            <a href="<?php echo SITE_URL; ?>/?category=<?php echo $cat['id']; ?>" class="badge <?php echo ($currentParentId == $cat['id'] || $categoryId == $cat['id']) ? 'bg-primary text-white' : 'bg-light text-dark text-decoration-none'; ?>">
                                 <?php echo escape($cat['name']); ?>
                             </a>
                         <?php else: ?>
-                            <a href="<?php echo SITE_URL; ?>/index.php?category=<?php echo $cat['id']; ?>" class="badge <?php echo $categoryId == $cat['id'] ? 'bg-primary text-white' : 'bg-light text-dark text-decoration-none'; ?>">
+                            <a href="<?php echo SITE_URL; ?>/?category=<?php echo $cat['id']; ?>" class="badge <?php echo $categoryId == $cat['id'] ? 'bg-primary text-white' : 'bg-light text-dark text-decoration-none'; ?>">
                                 <?php echo escape($cat['name']); ?>
                             </a>
                         <?php endif; ?>
@@ -58,7 +58,7 @@ CSS;
                             <?php if ($cat['id'] == $currentParentId && !empty($cat['children'])): ?>
                                 <div class="category-children w-100">
                                     <?php foreach ($cat['children'] as $child): ?>
-                                        <a href="<?php echo SITE_URL; ?>/index.php?category=<?php echo $child['id']; ?>" class="badge <?php echo $categoryId == $child['id'] ? 'bg-primary text-white' : 'bg-light text-dark text-decoration-none'; ?>">
+                                        <a href="<?php echo SITE_URL; ?>/?category=<?php echo $child['id']; ?>" class="badge <?php echo $categoryId == $child['id'] ? 'bg-primary text-white' : 'bg-light text-dark text-decoration-none'; ?>">
                                             <?php echo escape($child['name']); ?>
                                         </a>
                                     <?php endforeach; ?>
@@ -98,10 +98,10 @@ CSS;
                                 <?php if ($post['is_locked']): ?>
                                     <span class="badge bg-secondary me-1">锁定</span>
                                 <?php endif; ?>
-                                <a href="<?php echo SITE_URL; ?>/post.php?id=<?php echo $post['id']; ?>"><?php echo escape($post['title']); ?></a>
+                                <a href="<?php echo SITE_URL; ?>/pages/post.php?id=<?php echo $post['id']; ?>"><?php echo escape($post['title']); ?></a>
                             </div>
                             <div class="post-meta">
-                                <span>作者: <a href="<?php echo SITE_URL; ?>/profile.php?user=<?php echo $post['user_id']; ?>"><?php echo escape($post['username']); ?></a></span>
+                                <span>作者: <a href="<?php echo SITE_URL; ?>/pages/profile.php?user=<?php echo $post['user_id']; ?>"><?php echo escape($post['username']); ?></a></span>
                                 <span>分类: <?php echo escape($post['category_name'] ?? '未分类'); ?></span>
                                 <span>回复: <?php echo $post['comment_count']; ?></span>
                                 <span>浏览: <?php echo $post['views']; ?></span>

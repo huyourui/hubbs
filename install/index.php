@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->exec("SET FOREIGN_KEY_CHECKS = 1");
                 
                 /* 执行数据库结构SQL */
-                $sql = file_get_contents($installRootPath . '/database.sql');
+                $sql = file_get_contents($installRootPath . '/core/database.sql');
                 $pdo->exec($sql);
                 
                 $configContent = <<<'PHP'
@@ -138,7 +138,7 @@ PHP;
         if (empty($errors)) {
             /* 引入配置文件和引导文件以获取数据库连接 */
             require_once $installRootPath . '/config.php';
-            require_once $installRootPath . '/bootstrap.php';
+            require_once $installRootPath . '/core/bootstrap.php';
             
             /* 执行数据库迁移，确保所有字段都存在 */
             initDatabase($pdo);

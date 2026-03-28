@@ -12,7 +12,7 @@
  */
 
 /* 引入系统引导文件 */
-require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/core/bootstrap.php';
 
 /**
  * 检查remember_token并自动登录
@@ -63,8 +63,111 @@ function getCurrentUser(): ?array {
 }
 
 function redirect(string $url): void {
+    /* 如果URL不是绝对路径且不以ROOT_PATH开头，则添加ROOT_PATH */
+    if (!preg_match('/^https?:\/\//i', $url) && defined('ROOT_PATH') && strpos($url, ROOT_PATH) !== 0) {
+        $url = ROOT_PATH . '/' . ltrim($url, '/');
+    }
     header("Location: $url");
     exit;
+}
+
+/**
+ * 解析IP地址获取地理位置
+ * 使用免费的IP地址解析API
+ * 
+ * @param string $ip IP地址
+ * @param bool $cityOnly 是否只返回省一级信息
+ * @return string 地理位置信息（省市）
+ */
+function parseIpAddress(string $ip, bool $cityOnly = false): string {
+    /* 过滤无效IP */
+    if (empty($ip) || $ip === '127.0.0.1' || $ip === '::1' || strpos($ip, '192.168.') === 0 || strpos($ip, '10.') === 0 || strpos($ip, '172.') === 0) {
+        return '本地网络';
+    }
+    
+    /* 检查缓存 */
+    $cacheKey = 'ip_location_' . md5($ip);
+    $cached = cacheGet($cacheKey);
+    if ($cached !== null) {
+        /* 如果只需要省一级，从缓存中提取 */
+        if ($cityOnly && strpos($cached, ' ') !== false) {
+            $parts = explode(' ', $cached);
+            return $parts[0];
+        }
+        return $cached;
+    }
+    
+    /* 使用免费API解析IP地址 */
+    $location = '未知';
+    
+    try {
+        /* 使用 ip-api.com 免费API（每分钟45次请求限制） */
+        $url = "http://ip-api.com/json/{$ip}?lang=zh-CN&fields=status,country,regionName,city";
+        $response = @file_get_contents($url, false, stream_context_create([
+            'http' => [
+                'timeout' => 3,
+                'method' => 'GET'
+            ]
+        ]));
+        
+        if ($response) {
+            $data = json_decode($response, true);
+            if (isset($data['status']) && $data['status'] === 'success') {
+                $parts = [];
+                if (!empty($data['country']) && $data['country'] !== 'China') {
+                    $parts[] = $data['country'];
+                }
+                if (!empty($data['regionName'])) {
+                    $parts[] = $data['regionName'];
+                }
+                if (!empty($data['city']) && $data['city'] !== $data['regionName']) {
+                    $parts[] = $data['city'];
+                }
+                $location = implode(' ', $parts) ?: '未知';
+            }
+        }
+    } catch (Exception $e) {
+        /* 解析失败，返回默认值 */
+    }
+    
+    /* 缓存结果24小时 */
+    cacheSet($cacheKey, $location, 86400);
+    
+    /* 如果只需要省一级，提取省份信息 */
+    if ($cityOnly && strpos($location, ' ') !== false) {
+        $parts = explode(' ', $location);
+        return $parts[0];
+    }
+    
+    return $location;
+}
+
+/**
+ * 生成页面URL
+ * 自动处理pages目录下的文件路径
+ * 
+ * @param string $page 页面名称（不含.php扩展名）
+ * @param array $params 查询参数
+ * @return string 完整URL
+ */
+function pageUrl(string $page, array $params = []): string {
+    $url = SITE_URL . '/pages/' . $page . '.php';
+    if (!empty($params)) {
+        $url .= '?' . http_build_query($params);
+    }
+    return $url;
+}
+
+/**
+ * 生成站点URL
+ * 自动处理根目录下的文件路径
+ * 
+ * @param string $path 相对路径
+ * @return string 完整URL
+ */
+function siteUrl(string $path = ''): string {
+    $path = ltrim($path, '/');
+    return SITE_URL . ($path ? '/' . $path : '');
 }
 
 function escape(string $string): string {

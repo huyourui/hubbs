@@ -7,12 +7,12 @@
  * @website https://huyourui.com
  * @license MIT License
  */
-require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/../functions.php';
 
 if (!isLoggedIn()) {
     $_SESSION['redirect_after_login'] = 'profile.php';
     flashMessage('请先登录', 'info');
-    redirect('login.php');
+    redirect('pages/login.php');
 }
 
 $currentUserId = $_SESSION['user_id'];
@@ -25,7 +25,7 @@ $viewUser = $stmt->fetch();
 
 if (!$viewUser) {
     flashMessage('用户不存在', 'error');
-    redirect('index.php');
+    redirect('');
 }
 
 $errors = [];

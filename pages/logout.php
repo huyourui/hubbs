@@ -7,7 +7,7 @@
  * @website https://huyourui.com
  * @license MIT License
  */
-require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/../functions.php';
 
 // 清除remember_token
 if (isLoggedIn() && isset($pdo)) {
@@ -23,4 +23,4 @@ if (isset($_COOKIE['remember_token'])) {
 session_destroy();
 session_start();
 flashMessage('您已成功退出登录', 'info');
-redirect('login.php');
+redirect('pages/login.php');

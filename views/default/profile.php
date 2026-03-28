@@ -126,7 +126,7 @@ CSS;
                         <ul class="list-group list-group-flush">
                             <?php foreach ($myPosts as $post): ?>
                                 <li class="list-group-item">
-                                    <a href="<?php echo SITE_URL; ?>/post.php?id=<?php echo $post['id']; ?>"><?php echo escape($post['title']); ?></a>
+                                    <a href="<?php echo SITE_URL; ?>/pages/post.php?id=<?php echo $post['id']; ?>"><?php echo escape($post['title']); ?></a>
                                     <small class="text-muted d-block">
                                         <?php echo escape($post['category_name'] ?? '未分类'); ?> · 
                                         <?php echo formatTime($post['created_at']); ?> · 
@@ -146,7 +146,7 @@ CSS;
                         <ul class="list-group list-group-flush">
                             <?php foreach ($myComments as $comment): ?>
                                 <li class="list-group-item">
-                                    <a href="<?php echo SITE_URL; ?>/post.php?id=<?php echo $comment['post_id']; ?>#comment-<?php echo $comment['id']; ?>">
+                                    <a href="<?php echo SITE_URL; ?>/pages/post.php?id=<?php echo $comment['post_id']; ?>#comment-<?php echo $comment['id']; ?>">
                                         <?php echo escape(mb_substr($comment['content'], 0, 100)); ?><?php echo mb_strlen($comment['content']) > 100 ? '...' : ''; ?>
                                     </a>
                                     <small class="text-muted d-block">
@@ -168,7 +168,7 @@ CSS;
                         <ul class="list-group list-group-flush">
                             <?php foreach ($myFavorites as $post): ?>
                                 <li class="list-group-item">
-                                    <a href="<?php echo SITE_URL; ?>/post.php?id=<?php echo $post['id']; ?>"><?php echo escape($post['title']); ?></a>
+                                    <a href="<?php echo SITE_URL; ?>/pages/post.php?id=<?php echo $post['id']; ?>"><?php echo escape($post['title']); ?></a>
                                     <small class="text-muted d-block">
                                         作者: <?php echo escape($post['username']); ?> · 
                                         <?php echo escape($post['category_name'] ?? '未分类'); ?> · 

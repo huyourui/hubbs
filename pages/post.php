@@ -7,19 +7,19 @@
  * @website https://huyourui.com
  * @license MIT License
  */
-require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/../functions.php';
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if (!$id) {
-    redirect('index.php');
+    redirect('');
 }
 
 $post = getPostById($id);
 
 if (!$post) {
     flashMessage('帖子不存在', 'error');
-    redirect('index.php');
+    redirect('');
 }
 
 incrementPostViews($id);
@@ -51,7 +51,7 @@ if (isset($_GET['toggle_favorite']) && isLoggedIn()) {
             exit;
         } else {
             flashMessage($message, 'success');
-            redirect('post.php?id=' . $id);
+            redirect('pages/post.php?id=' . $id);
         }
     }
 }
@@ -87,7 +87,7 @@ if (isset($_GET['toggle_like']) && isLoggedIn()) {
             exit;
         } else {
             flashMessage($message, 'success');
-            redirect('post.php?id=' . $id);
+            redirect('pages/post.php?id=' . $id);
         }
     }
 }
@@ -107,7 +107,7 @@ if (isset($_GET['toggle_digest']) && isAdmin()) {
         );
     }
     flashMessage($isNowDigest ? '已设为精华' : '已取消精华', 'success');
-    redirect('post.php?id=' . $id);
+    redirect('pages/post.php?id=' . $id);
 }
 
 if (isset($_GET['delete_comment']) && isLoggedIn()) {
@@ -122,7 +122,7 @@ if (isset($_GET['delete_comment']) && isLoggedIn()) {
         addPoints($comment['user_id'], 'comment_deleted', 'comment', $commentId, '评论被删除');
         flashMessage('评论已删除', 'success');
     }
-    redirect('post.php?id=' . $id);
+    redirect('pages/post.php?id=' . $id);
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_comment']) && isLoggedIn()) {
@@ -181,7 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_comment']) && 
             }
         }
     }
-    redirect('post.php?id=' . $id);
+    redirect('pages/post.php?id=' . $id);
 }
 
 $comments = getCommentsByPostId($id);

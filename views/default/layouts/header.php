@@ -24,7 +24,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4">
         <div class="container">
-            <a class="navbar-brand" href="<?php echo SITE_URL; ?>/index.php">
+            <a class="navbar-brand" href="<?php echo SITE_URL; ?>/">
                 <?php echo escape(getSetting('site_title', SITE_NAME)); ?>
                 <?php $subtitle = getSetting('site_subtitle', ''); if ($subtitle): ?>
                     <span class="site-subtitle"><?php echo escape($subtitle); ?></span>
@@ -37,16 +37,16 @@
                 <ul class="navbar-nav ms-auto">
                     <?php if (isLoggedIn()): ?>
                         <li class="nav-item">
-                            <a class="nav-link" href="<?php echo SITE_URL; ?>/create.php">发帖</a>
+                            <a class="nav-link" href="<?php echo SITE_URL; ?>/pages/create.php">发帖</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="<?php echo SITE_URL; ?>/profile.php">个人中心</a>
+                            <a class="nav-link" href="<?php echo SITE_URL; ?>/pages/profile.php">个人中心</a>
                         </li>
                         <?php 
                         $unreadCount = getUnreadNotificationCount($_SESSION['user_id']);
                         ?>
                         <li class="nav-item">
-                            <a class="nav-link position-relative" href="<?php echo SITE_URL; ?>/notifications.php">
+                            <a class="nav-link position-relative" href="<?php echo SITE_URL; ?>/pages/notifications.php">
                                 消息
                                 <?php if ($unreadCount > 0): ?>
                                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
@@ -57,19 +57,19 @@
                         </li>
                         <?php if (isAdmin()): ?>
                             <li class="nav-item">
-                                <a class="nav-link" href="<?php echo SITE_URL; ?>/admin.php">管理后台</a>
+                                <a class="nav-link" href="<?php echo SITE_URL; ?>/pages/admin.php">管理后台</a>
                             </li>
                         <?php endif; ?>
                         <li class="nav-item">
-                            <a class="nav-link text-danger" href="<?php echo SITE_URL; ?>/logout.php">退出</a>
+                            <a class="nav-link text-danger" href="<?php echo SITE_URL; ?>/pages/logout.php">退出</a>
                         </li>
                     <?php else: ?>
                         <li class="nav-item">
-                            <a class="nav-link" href="<?php echo SITE_URL; ?>/login.php">登录</a>
+                            <a class="nav-link" href="<?php echo SITE_URL; ?>/pages/login.php">登录</a>
                         </li>
                         <?php if (getSetting('allow_register', '1') === '1'): ?>
                             <li class="nav-item">
-                                <a class="btn btn-primary ms-2" href="<?php echo SITE_URL; ?>/register.php">注册</a>
+                                <a class="btn btn-primary ms-2" href="<?php echo SITE_URL; ?>/pages/register.php">注册</a>
                             </li>
                         <?php endif; ?>
                     <?php endif; ?>

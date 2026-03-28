@@ -26,7 +26,7 @@ if (!defined('HUBBS_NAME')) {
 
 /* 定义系统根路径 */
 if (!defined('ROOT_PATH')) {
-    $rootPath = str_replace('\\', '/', dirname(__FILE__));
+    $rootPath = str_replace('\\', '/', dirname(__DIR__));
     $documentRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
     $rootPath = str_replace($documentRoot, '', $rootPath);
     $rootPath = rtrim($rootPath, '/');
@@ -527,7 +527,7 @@ function initDatabaseConnection(): ?PDO {
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
         
         /* 如果安装锁文件存在，执行数据库迁移 */
-        if (file_exists(__DIR__ . '/install.lock')) {
+        if (file_exists(__DIR__ . '/../install.lock')) {
             initDatabase($pdo);
         }
         
@@ -538,7 +538,7 @@ function initDatabaseConnection(): ?PDO {
 }
 
 /* 加载数据库配置文件（必须在调用 initDatabaseConnection 之前） */
-$configFile = __DIR__ . '/config.php';
+$configFile = __DIR__ . '/../config.php';
 if (file_exists($configFile)) {
     require_once $configFile;
 }
@@ -547,7 +547,7 @@ if (file_exists($configFile)) {
 $pdo = initDatabaseConnection();
 
 /* 检查是否已安装（install.lock 文件存在） */
-$installLockFile = __DIR__ . '/install.lock';
+$installLockFile = __DIR__ . '/../install.lock';
 $inInstallDir = strpos($_SERVER['PHP_SELF'], '/install/') !== false;
 
 /* 如果 install.lock 不存在且不在安装目录，跳转到安装页面 */

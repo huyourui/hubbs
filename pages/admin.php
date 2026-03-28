@@ -7,17 +7,17 @@
  * @website https://huyourui.com
  * @license MIT License
  */
-require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/../functions.php';
 
 if (!isLoggedIn()) {
     $_SESSION['redirect_after_login'] = 'admin.php';
     flashMessage('请先登录', 'info');
-    redirect('login.php');
+    redirect('pages/login.php');
 }
 
 if (!isAdmin()) {
     flashMessage('您没有权限访问此页面', 'error');
-    redirect('index.php');
+    redirect('');
 }
 
 $tab = $_GET['tab'] ?? 'dashboard';
@@ -102,7 +102,7 @@ if (isset($_POST['batch_delete_posts']) && isAdmin()) {
             }
         }
         flashMessage('已批量删除 ' . count($postIds) . ' 个帖子', 'success');
-        redirect('admin.php?tab=posts');
+        redirect('pages/admin.php?tab=posts');
     }
 }
 
@@ -147,7 +147,7 @@ if (isset($_GET['delete_post'])) {
         $stmt->execute([$postId]);
         
         flashMessage('帖子已删除', 'success');
-        redirect('admin.php?tab=posts');
+        redirect('pages/admin.php?tab=posts');
     }
 }
 
@@ -172,7 +172,7 @@ if (isset($_GET['toggle_sticky'])) {
     }
     
     flashMessage('置顶状态已更新', 'success');
-    redirect('admin.php?tab=posts');
+    redirect('pages/admin.php?tab=posts');
 }
 
 if (isset($_GET['toggle_lock'])) {
@@ -196,7 +196,7 @@ if (isset($_GET['toggle_lock'])) {
     }
     
     flashMessage('锁定状态已更新', 'success');
-    redirect('admin.php?tab=posts');
+    redirect('pages/admin.php?tab=posts');
 }
 
 if (isset($_GET['toggle_digest'])) {
@@ -220,7 +220,7 @@ if (isset($_GET['toggle_digest'])) {
     }
     
     flashMessage('精华状态已更新', 'success');
-    redirect('admin.php?tab=posts');
+    redirect('pages/admin.php?tab=posts');
 }
 
 if (isset($_GET['delete_user'])) {
@@ -232,7 +232,7 @@ if (isset($_GET['delete_user'])) {
     } else {
         flashMessage('不能删除自己的账号', 'error');
     }
-    redirect('admin.php?tab=users');
+    redirect('pages/admin.php?tab=users');
 }
 
 if (isset($_GET['toggle_admin'])) {
@@ -244,7 +244,7 @@ if (isset($_GET['toggle_admin'])) {
     } else {
         flashMessage('不能修改自己的角色', 'error');
     }
-    redirect('admin.php?tab=users');
+    redirect('pages/admin.php?tab=users');
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_category'])) {
@@ -274,7 +274,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_category'])) {
         /* 清除分类缓存 */
         cacheDelete('categories_all');
         flashMessage('分类已添加', 'success');
-        redirect('admin.php?tab=categories');
+        redirect('pages/admin.php?tab=categories');
     }
 }
 
@@ -311,7 +311,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_category'])) {
         /* 清除分类缓存 */
         cacheDelete('categories_all');
         flashMessage('分类已更新', 'success');
-        redirect('admin.php?tab=categories');
+        redirect('pages/admin.php?tab=categories');
     }
 }
 
@@ -333,7 +333,7 @@ if (isset($_GET['move_up'])) {
     /* 清除分类缓存 */
     cacheDelete('categories_all');
     flashMessage('排序已更新', 'success');
-    redirect('admin.php?tab=categories');
+    redirect('pages/admin.php?tab=categories');
 }
 
 if (isset($_GET['move_down'])) {
@@ -354,7 +354,7 @@ if (isset($_GET['move_down'])) {
     /* 清除分类缓存 */
     cacheDelete('categories_all');
     flashMessage('排序已更新', 'success');
-    redirect('admin.php?tab=categories');
+    redirect('pages/admin.php?tab=categories');
 }
 
 if (isset($_GET['delete_category'])) {
@@ -364,7 +364,7 @@ if (isset($_GET['delete_category'])) {
     /* 清除分类缓存 */
     cacheDelete('categories_all');
     flashMessage('分类已删除', 'success');
-    redirect('admin.php?tab=categories');
+    redirect('pages/admin.php?tab=categories');
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
@@ -423,7 +423,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
     updateSetting('invite_only', $inviteOnly);
     
     flashMessage('设置已保存', 'success');
-    redirect('admin.php?tab=settings');
+    redirect('pages/admin.php?tab=settings');
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_email_settings'])) {
@@ -452,7 +452,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_email_settings']
     updateSetting('email_notify_reply', $emailNotifyReply);
     
     flashMessage('邮件设置已保存', 'success');
-    redirect('admin.php?tab=email');
+    redirect('pages/admin.php?tab=email');
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['test_email'])) {
@@ -468,7 +468,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['test_email'])) {
             flashMessage('测试邮件发送失败：' . $result['error'], 'error');
         }
     }
-    redirect('admin.php?tab=email');
+    redirect('pages/admin.php?tab=email');
 }
 
 $editCategory = null;
@@ -483,7 +483,7 @@ if (isset($_GET['delete_link'])) {
     $linkId = (int)$_GET['delete_link'];
     deleteLink($linkId);
     flashMessage('友情链接已删除', 'success');
-    redirect('admin.php?tab=links');
+    redirect('pages/admin.php?tab=links');
 }
 
 if (isset($_GET['toggle_link'])) {
@@ -493,7 +493,7 @@ if (isset($_GET['toggle_link'])) {
         updateLink($link['id'], $link['name'], $link['url'], $link['description'], $link['sort_order'], $link['is_visible'] ? 0 : 1);
         flashMessage('友情链接状态已更新', 'success');
     }
-    redirect('admin.php?tab=links');
+    redirect('pages/admin.php?tab=links');
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_link'])) {
@@ -505,7 +505,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_link'])) {
     if (!empty($name) && !empty($url)) {
         addLink($name, $url, $description, $sortOrder);
         flashMessage('友情链接已添加', 'success');
-        redirect('admin.php?tab=links');
+        redirect('pages/admin.php?tab=links');
     } else {
         flashMessage('请填写网站名称和网址', 'error');
     }
@@ -522,7 +522,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_link'])) {
     if (!empty($name) && !empty($url)) {
         updateLink($linkId, $name, $url, $description, $sortOrder, $isVisible);
         flashMessage('友情链接已更新', 'success');
-        redirect('admin.php?tab=links');
+        redirect('pages/admin.php?tab=links');
     } else {
         flashMessage('请填写网站名称和网址', 'error');
     }
@@ -543,7 +543,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_point_rules'])) 
         updatePointRule((int)$ruleId, $points, $isEnabled, $dailyLimit);
     }
     flashMessage('积分规则已保存', 'success');
-    redirect('admin.php?tab=points');
+    redirect('pages/admin.php?tab=points');
 }
 
 if (isset($_GET['toggle_point_rule'])) {
@@ -555,7 +555,7 @@ if (isset($_GET['toggle_point_rule'])) {
         updatePointRule($ruleId, $rule['points'], $rule['is_enabled'] ? 0 : 1, $rule['daily_limit']);
         flashMessage('积分规则状态已更新', 'success');
     }
-    redirect('admin.php?tab=points');
+    redirect('pages/admin.php?tab=points');
 }
 
 $editAnnouncement = null;
@@ -565,7 +565,7 @@ if ($tab === 'announcements') {
         $announcementId = (int)$_GET['delete_announcement'];
         deleteAnnouncement($announcementId);
         flashMessage('公告已删除', 'success');
-        redirect('admin.php?tab=announcements');
+        redirect('pages/admin.php?tab=announcements');
     }
     
     if (isset($_GET['edit_announcement'])) {
@@ -582,7 +582,7 @@ if ($tab === 'announcements') {
             $stmt->execute([$announcement['is_enabled'] ? 0 : 1, $announcementId]);
             flashMessage('公告状态已更新', 'success');
         }
-        redirect('admin.php?tab=announcements');
+        redirect('pages/admin.php?tab=announcements');
     }
     
     if (isset($_POST['save_announcement'])) {
@@ -601,7 +601,7 @@ if ($tab === 'announcements') {
                 createAnnouncement($content, $bgColor, $isEnabled);
                 flashMessage('公告已添加', 'success');
             }
-            redirect('admin.php?tab=announcements');
+            redirect('pages/admin.php?tab=announcements');
         }
     }
 }
@@ -623,7 +623,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_level'])) {
         $stmt = $pdo->prepare("INSERT INTO user_levels (name, min_points, max_points, sort_order) VALUES (?, ?, ?, ?)");
         $stmt->execute([$name, $minPoints, $maxPoints, $maxOrder + 1]);
         flashMessage('等级已添加', 'success');
-        redirect('admin.php?tab=levels');
+        redirect('pages/admin.php?tab=levels');
     }
 }
 
@@ -643,7 +643,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_level'])) {
         $stmt = $pdo->prepare("UPDATE user_levels SET name = ?, min_points = ?, max_points = ? WHERE id = ?");
         $stmt->execute([$name, $minPoints, $maxPoints, $levelId]);
         flashMessage('等级已更新', 'success');
-        redirect('admin.php?tab=levels');
+        redirect('pages/admin.php?tab=levels');
     }
 }
 
@@ -652,7 +652,7 @@ if (isset($_GET['delete_level'])) {
     $stmt = $pdo->prepare("DELETE FROM user_levels WHERE id = ?");
     $stmt->execute([$levelId]);
     flashMessage('等级已删除', 'success');
-    redirect('admin.php?tab=levels');
+    redirect('pages/admin.php?tab=levels');
 }
 
 if (isset($_GET['move_level_up'])) {
@@ -673,7 +673,7 @@ if (isset($_GET['move_level_up'])) {
         }
         flashMessage('排序已更新', 'success');
     }
-    redirect('admin.php?tab=levels');
+    redirect('pages/admin.php?tab=levels');
 }
 
 if (isset($_GET['move_level_down'])) {
@@ -694,7 +694,7 @@ if (isset($_GET['move_level_down'])) {
         }
         flashMessage('排序已更新', 'success');
     }
-    redirect('admin.php?tab=levels');
+    redirect('pages/admin.php?tab=levels');
 }
 
 $editLevel = null;
@@ -721,7 +721,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_invite_codes
     }
     
     flashMessage("成功生成 {$generated} 个邀请码", 'success');
-    redirect('admin.php?tab=invite');
+    redirect('pages/admin.php?tab=invite');
 }
 
 if (isset($_GET['delete_invite_code'])) {
@@ -729,13 +729,13 @@ if (isset($_GET['delete_invite_code'])) {
     $stmt = $pdo->prepare("DELETE FROM invite_codes WHERE id = ? AND is_used = 0");
     $stmt->execute([$codeId]);
     flashMessage('邀请码已删除', 'success');
-    redirect('admin.php?tab=invite');
+    redirect('pages/admin.php?tab=invite');
 }
 
 if (isset($_GET['delete_all_unused_codes'])) {
     $stmt = $pdo->exec("DELETE FROM invite_codes WHERE is_used = 0");
     flashMessage('所有未使用的邀请码已删除', 'success');
-    redirect('admin.php?tab=invite');
+    redirect('pages/admin.php?tab=invite');
 }
 
 $stmt = $pdo->query("SELECT p.*, u.username, c.name as category_name FROM posts p JOIN users u ON p.user_id = u.id LEFT JOIN categories c ON p.category_id = c.id ORDER BY p.created_at DESC");

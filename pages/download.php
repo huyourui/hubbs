@@ -7,31 +7,31 @@
  * @website https://huyourui.com
  * @license MIT License
  */
-require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/../functions.php';
 
 $id = (int)($_GET['id'] ?? 0);
 
 if ($id <= 0) {
     flashMessage('无效的附件ID', 'error');
-    redirect('index.php');
+    redirect('');
 }
 
 $attachment = getAttachmentById($id);
 
 if (!$attachment) {
     flashMessage('附件不存在', 'error');
-    redirect('index.php');
+    redirect('');
 }
 
 if (!isLoggedIn() && !isAttachmentGuestDownload()) {
     flashMessage('请先登录', 'info');
     $_SESSION['redirect_after_login'] = 'post.php?id=' . $attachment['post_id'];
-    redirect('login.php');
+    redirect('pages/login.php');
 }
 
 if (!file_exists($attachment['file_path'])) {
     flashMessage('文件不存在', 'error');
-    redirect('post.php?id=' . $attachment['post_id']);
+    redirect('pages/post.php?id=' . $attachment['post_id']);
 }
 
 incrementAttachmentDownload($id);

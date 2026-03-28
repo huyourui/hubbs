@@ -7,35 +7,35 @@
  * @website https://huyourui.com
  * @license MIT License
  */
-require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/../functions.php';
 
 if (!isLoggedIn()) {
     $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
     flashMessage('请先登录', 'info');
-    redirect('login.php');
+    redirect('pages/login.php');
 }
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if (!$id) {
-    redirect('index.php');
+    redirect('');
 }
 
 $post = getPostById($id);
 
 if (!$post) {
     flashMessage('帖子不存在', 'error');
-    redirect('index.php');
+    redirect('');
 }
 
 if ($_SESSION['user_id'] != $post['user_id'] && !isAdmin()) {
     flashMessage('您没有权限编辑此帖子', 'error');
-    redirect('post.php?id=' . $id);
+    redirect('pages/post.php?id=' . $id);
 }
 
 if ($post['is_locked'] && !isAdmin()) {
     flashMessage('此帖子已被锁定，无法编辑', 'error');
-    redirect('post.php?id=' . $id);
+    redirect('pages/post.php?id=' . $id);
 }
 
 $errors = [];
@@ -110,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             flashMessage('帖子更新成功', 'success');
-            redirect('post.php?id=' . $id);
+            redirect('pages/post.php?id=' . $id);
         } else {
             $errors[] = '更新失败，请稍后重试';
         }

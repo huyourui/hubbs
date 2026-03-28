@@ -12,7 +12,8 @@ HuBBS 是一款轻量级、现代化的开源论坛系统，采用原生 PHP + M
 **作者**: 古雨月田  
 **QQ**: 281900864  
 **官网**: https://huyourui.com  
-**演示**: https://bbs.huyourui.com
+**演示**: https://bbs.huyourui.com  
+**仓库**: https://gitee.com/youruihu/hubbs
 
 ---
 
@@ -34,16 +35,22 @@ HuBBS 是一款轻量级、现代化的开源论坛系统，采用原生 PHP + M
 - ⚙️ **系统设置** - 站点名称、副标题、注册开关等
 - 🔗 **友情链接** - 友情链接管理
 - 📢 **公告管理** - 站点公告发布
+- 📊 **帖子管理** - 帖子列表、IP地址显示、地区解析
+- 🎯 **等级管理** - 用户等级系统
+- 💰 **积分管理** - 积分规则配置
+- 🎫 **邀请码管理** - 邀请注册功能
 
 ### 特色功能
 - 🎨 **响应式设计** - 完美适配PC和移动端
 - 🔒 **隐藏内容** - 支持 [hide][/hide] 标签隐藏内容
 - 📷 **图片上传** - 支持拖拽上传、自动生成缩略图
 - 📎 **附件上传** - 支持多种文件格式上传
-- ⌨️ **快捷键** - 支持 Ctrl+Enter 快速发布
+- ⌨️ **快捷键** - 支持 Ctrl+Enter 快速发布帖子和评论
 - 🌙 **暗色模式** - 支持明暗主题切换
 - 📱 **积分系统** - 用户积分、等级系统
 - 🔐 **安全防护** - XSS防护、CSRF防护、SQL注入防护
+- 🌍 **IP地区解析** - 发帖IP地址解析为地理位置
+- 📋 **下拉菜单操作** - 后台管理操作项下拉菜单样式
 
 ---
 
@@ -63,7 +70,7 @@ HuBBS 是一款轻量级、现代化的开源论坛系统，采用原生 PHP + M
 |------|------|
 | PHP | >= 7.4 |
 | MySQL | >= 5.7 |
-| 扩展 | PDO, GD, MBString, JSON |
+| 扩展 | PDO, GD, MBString, JSON, cURL |
 
 ---
 
@@ -72,7 +79,7 @@ HuBBS 是一款轻量级、现代化的开源论坛系统，采用原生 PHP + M
 ### 1. 下载程序
 
 ```bash
-git clone https://github.com/your-username/hubbs.git
+git clone https://gitee.com/youruihu/hubbs.git
 # 或直接下载压缩包
 ```
 
@@ -113,9 +120,26 @@ cache/
 
 ```
 hubbs/
+├── index.php               # 入口文件
+├── config.php              # 配置文件（安装后生成）
+├── functions.php           # 核心函数库
+├── core/                   # 核心文件
+│   ├── bootstrap.php       # 引导文件
+│   └── database.sql        # 数据库结构
+├── pages/                  # 页面入口
+│   ├── home.php            # 首页
+│   ├── login.php           # 登录
+│   ├── logout.php          # 退出
+│   ├── register.php        # 注册
+│   ├── create.php          # 发帖
+│   ├── edit.php            # 编辑
+│   ├── post.php            # 帖子详情
+│   ├── profile.php         # 个人中心
+│   ├── notifications.php   # 通知
+│   ├── download.php        # 下载
+│   └── admin.php           # 后台
 ├── api/                    # API接口
 │   └── upload.php          # 文件上传接口
-├── cache/                  # 缓存目录
 ├── install/                # 安装程序
 │   └── index.php           # 安装入口
 ├── public/                 # 公共资源
@@ -128,6 +152,8 @@ hubbs/
 ├── views/                  # 视图模板
 │   └── default/
 │       ├── layouts/        # 布局模板
+│       │   ├── header.php  # 头部
+│       │   └── footer.php  # 底部
 │       ├── admin.php       # 后台页面
 │       ├── create.php      # 发帖页面
 │       ├── edit.php        # 编辑页面
@@ -136,22 +162,11 @@ hubbs/
 │       ├── post.php        # 帖子详情
 │       ├── profile.php     # 个人中心
 │       └── register.php    # 注册页面
-├── admin.php               # 后台入口
-├── bootstrap.php           # 引导文件
-├── config.php              # 配置文件（安装后生成）
-├── create.php              # 发帖入口
-├── database.sql            # 数据库结构
-├── download.php            # 下载入口
-├── edit.php                # 编辑入口
-├── functions.php           # 核心函数
-├── index.php               # 首页入口
+├── cache/                  # 缓存目录
 ├── install.lock            # 安装锁定文件
-├── login.php               # 登录入口
-├── logout.php              # 退出入口
-├── notifications.php       # 通知入口
-├── post.php                # 帖子入口
-├── profile.php             # 个人中心入口
-└── register.php            # 注册入口
+├── README.md               # 项目说明
+├── LICENSE                 # 开源协议
+└── .gitignore              # Git忽略规则
 ```
 
 ---
@@ -160,7 +175,7 @@ hubbs/
 
 ### 系统设置
 
-登录管理员账号后，访问后台 `/admin.php` 进行系统设置：
+登录管理员账号后，访问后台 `/pages/admin.php` 进行系统设置：
 
 | 设置项 | 说明 |
 |--------|------|
@@ -192,7 +207,7 @@ hubbs/
 
 ## 📝 更新日志
 
-### v1.0.0 (2024-03-27)
+### v1.0.0 (2024-03-28)
 
 **新增功能**
 - 初始版本发布
@@ -204,7 +219,18 @@ hubbs/
 - 消息通知系统
 - 收藏点赞功能
 - 积分等级系统
-- Ctrl+Enter 快捷发布
+- Ctrl+Enter 快捷发布帖子和评论
+- IP地址解析显示地区信息
+- 后台帖子管理下拉菜单操作
+- 邀请码注册功能
+- 用户等级系统
+- 积分规则管理
+
+**目录优化**
+- 重构目录结构，按功能分类
+- 新增 `core/` 目录存放核心文件
+- 新增 `pages/` 目录存放页面入口
+- 优化代码组织结构
 
 **已知问题**
 - 暂无
@@ -235,6 +261,7 @@ hubbs/
 - **QQ**: 281900864
 - **官网**: https://huyourui.com
 - **论坛**: https://bbs.huyourui.com
+- **Gitee**: https://gitee.com/youruihu/hubbs
 
 ---
 
@@ -243,6 +270,7 @@ hubbs/
 感谢以下开源项目：
 - [Bootstrap](https://getbootstrap.com/) - 前端框架
 - [Bootstrap Icons](https://icons.getbootstrap.com/) - 图标库
+- [ip-api.com](http://ip-api.com/) - IP地址解析API
 
 ---
 

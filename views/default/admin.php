@@ -14,6 +14,9 @@ $extraStyles = <<<CSS
 .admin-sidebar .nav-link:hover { background-color: #e9ecef; }
 .admin-sidebar .nav-link.active:hover { background-color: var(--bs-primary); }
 @media (max-width: 992px) { .admin-sidebar { position: static; margin-bottom: 1rem; } }
+.table-responsive { overflow-x: auto; overflow-y: visible; }
+.table-responsive .dropdown-menu { position: absolute !important; z-index: 1050; }
+.table-responsive > .table { margin-bottom: 0; }
 CSS;
 ?>
 
@@ -23,37 +26,37 @@ CSS;
             <div class="card-body">
                 <h5 class="mb-3">管理菜单</h5>
                 <nav class="nav flex-column">
-                    <a href="<?php echo SITE_URL; ?>/admin.php?tab=dashboard" class="nav-link <?php echo $tab === 'dashboard' ? 'active' : ''; ?>">
+                    <a href="<?php echo SITE_URL; ?>/pages/admin.php?tab=dashboard" class="nav-link <?php echo $tab === 'dashboard' ? 'active' : ''; ?>">
                         仪表盘
                     </a>
-                    <a href="<?php echo SITE_URL; ?>/admin.php?tab=posts" class="nav-link <?php echo $tab === 'posts' ? 'active' : ''; ?>">
+                    <a href="<?php echo SITE_URL; ?>/pages/admin.php?tab=posts" class="nav-link <?php echo $tab === 'posts' ? 'active' : ''; ?>">
                         帖子管理
                     </a>
-                    <a href="<?php echo SITE_URL; ?>/admin.php?tab=users" class="nav-link <?php echo $tab === 'users' ? 'active' : ''; ?>">
+                    <a href="<?php echo SITE_URL; ?>/pages/admin.php?tab=users" class="nav-link <?php echo $tab === 'users' ? 'active' : ''; ?>">
                         用户管理
                     </a>
-                    <a href="<?php echo SITE_URL; ?>/admin.php?tab=categories" class="nav-link <?php echo $tab === 'categories' ? 'active' : ''; ?>">
+                    <a href="<?php echo SITE_URL; ?>/pages/admin.php?tab=categories" class="nav-link <?php echo $tab === 'categories' ? 'active' : ''; ?>">
                         分类管理
                     </a>
-                    <a href="<?php echo SITE_URL; ?>/admin.php?tab=links" class="nav-link <?php echo $tab === 'links' ? 'active' : ''; ?>">
+                    <a href="<?php echo SITE_URL; ?>/pages/admin.php?tab=links" class="nav-link <?php echo $tab === 'links' ? 'active' : ''; ?>">
                         友情链接
                     </a>
-                    <a href="<?php echo SITE_URL; ?>/admin.php?tab=announcements" class="nav-link <?php echo $tab === 'announcements' ? 'active' : ''; ?>">
+                    <a href="<?php echo SITE_URL; ?>/pages/admin.php?tab=announcements" class="nav-link <?php echo $tab === 'announcements' ? 'active' : ''; ?>">
                         公告管理
                     </a>
-                    <a href="<?php echo SITE_URL; ?>/admin.php?tab=levels" class="nav-link <?php echo $tab === 'levels' ? 'active' : ''; ?>">
+                    <a href="<?php echo SITE_URL; ?>/pages/admin.php?tab=levels" class="nav-link <?php echo $tab === 'levels' ? 'active' : ''; ?>">
                         等级管理
                     </a>
-                    <a href="<?php echo SITE_URL; ?>/admin.php?tab=points" class="nav-link <?php echo $tab === 'points' ? 'active' : ''; ?>">
+                    <a href="<?php echo SITE_URL; ?>/pages/admin.php?tab=points" class="nav-link <?php echo $tab === 'points' ? 'active' : ''; ?>">
                         <?php echo getPointsName(); ?>管理
                     </a>
-                    <a href="<?php echo SITE_URL; ?>/admin.php?tab=email" class="nav-link <?php echo $tab === 'email' ? 'active' : ''; ?>">
+                    <a href="<?php echo SITE_URL; ?>/pages/admin.php?tab=email" class="nav-link <?php echo $tab === 'email' ? 'active' : ''; ?>">
                         邮件管理
                     </a>
-                    <a href="<?php echo SITE_URL; ?>/admin.php?tab=invite" class="nav-link <?php echo $tab === 'invite' ? 'active' : ''; ?>">
+                    <a href="<?php echo SITE_URL; ?>/pages/admin.php?tab=invite" class="nav-link <?php echo $tab === 'invite' ? 'active' : ''; ?>">
                         邀请码管理
                     </a>
-                    <a href="<?php echo SITE_URL; ?>/admin.php?tab=settings" class="nav-link <?php echo $tab === 'settings' ? 'active' : ''; ?>">
+                    <a href="<?php echo SITE_URL; ?>/pages/admin.php?tab=settings" class="nav-link <?php echo $tab === 'settings' ? 'active' : ''; ?>">
                         系统设置
                     </a>
                 </nav>
@@ -138,7 +141,7 @@ CSS;
                                 <?php else: ?>
                                     <?php foreach ($dashboardData['hotPosts'] as $post): ?>
                                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            <a href="<?php echo SITE_URL; ?>/post.php?id=<?php echo $post['id']; ?>" target="_blank">
+                                            <a href="<?php echo SITE_URL; ?>/pages/post.php?id=<?php echo $post['id']; ?>" target="_blank">
                                                 <?php echo escape(mb_substr($post['title'], 0, 30)); ?><?php echo mb_strlen($post['title']) > 30 ? '...' : ''; ?>
                                             </a>
                                             <span class="badge bg-secondary"><?php echo number_format($post['views']); ?> 浏览</span>
@@ -155,7 +158,7 @@ CSS;
                                 <?php else: ?>
                                     <?php foreach ($dashboardData['newUsers'] as $user): ?>
                                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            <a href="<?php echo SITE_URL; ?>/profile.php?user=<?php echo $user['id']; ?>" target="_blank">
+                                            <a href="<?php echo SITE_URL; ?>/pages/profile.php?user=<?php echo $user['id']; ?>" target="_blank">
                                                 <?php echo escape($user['username']); ?>
                                             </a>
                                             <small class="text-muted"><?php echo date('Y-m-d', strtotime($user['created_at'])); ?></small>
@@ -204,7 +207,7 @@ CSS;
 
                 <?php elseif ($tab === 'posts'): ?>
                     <h4 class="mb-4">帖子管理</h4>
-                    <form id="batchDeleteForm" method="POST" action="<?php echo SITE_URL; ?>/admin.php?tab=posts">
+                    <form id="batchDeleteForm" method="POST" action="<?php echo SITE_URL; ?>/pages/admin.php?tab=posts">
                         <input type="hidden" name="csrf_token" value="<?php echo generateCsrfToken(); ?>">
                         <div class="mb-3">
                             <button type="submit" name="batch_delete_posts" value="1" class="btn btn-danger" onclick="return confirm('确定要删除选中的帖子吗？此操作不可恢复！')">
@@ -220,6 +223,8 @@ CSS;
                                         <th>标题</th>
                                         <th>作者</th>
                                         <th>分类</th>
+                                        <th>IP地址</th>
+                                        <th>地区</th>
                                         <th>状态</th>
                                         <th>创建时间</th>
                                         <th>操作</th>
@@ -231,12 +236,14 @@ CSS;
                                             <td><input type="checkbox" name="post_ids[]" value="<?php echo $post['id']; ?>"></td>
                                             <td><?php echo $post['id']; ?></td>
                                             <td>
-                                                <a href="<?php echo SITE_URL; ?>/post.php?id=<?php echo $post['id']; ?>">
+                                                <a href="<?php echo SITE_URL; ?>/pages/post.php?id=<?php echo $post['id']; ?>">
                                                     <?php echo escape(mb_substr($post['title'], 0, 30)); ?><?php echo mb_strlen($post['title']) > 30 ? '...' : ''; ?>
                                                 </a>
                                             </td>
                                             <td><?php echo escape($post['username']); ?></td>
                                             <td><?php echo escape($post['category_name'] ?? '未分类'); ?></td>
+                                            <td><small class="text-muted"><?php echo escape($post['ip_address'] ?? '-'); ?></small></td>
+                                            <td><small class="text-muted"><?php echo parseIpAddress($post['ip_address'] ?? ''); ?></small></td>
                                             <td>
                                                 <?php if ($post['is_sticky']): ?>
                                                     <span class="badge bg-warning">置顶</span>
@@ -250,12 +257,21 @@ CSS;
                                             </td>
                                             <td><?php echo date('Y-m-d H:i', strtotime($post['created_at'])); ?></td>
                                             <td>
-                                                <a href="<?php echo SITE_URL; ?>/post.php?id=<?php echo $post['id']; ?>" class="btn btn-sm btn-outline-primary">查看</a>
-                                                <a href="<?php echo SITE_URL; ?>/edit.php?id=<?php echo $post['id']; ?>" class="btn btn-sm btn-outline-warning">编辑</a>
-                                                <a href="<?php echo SITE_URL; ?>/admin.php?toggle_sticky=<?php echo $post['id']; ?>" class="btn btn-sm btn-outline-success"><?php echo $post['is_sticky'] ? '取消置顶' : '置顶'; ?></a>
-                                                <a href="<?php echo SITE_URL; ?>/admin.php?toggle_digest=<?php echo $post['id']; ?>" class="btn btn-sm btn-outline-info"><?php echo !empty($post['is_digest']) ? '取消精华' : '精华'; ?></a>
-                                                <a href="<?php echo SITE_URL; ?>/admin.php?toggle_lock=<?php echo $post['id']; ?>" class="btn btn-sm btn-outline-warning"><?php echo $post['is_locked'] ? '解锁' : '锁定'; ?></a>
-                                                <a href="<?php echo SITE_URL; ?>/admin.php?delete_post=<?php echo $post['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('确定要删除这篇帖子吗？')">删除</a>
+                                                <div class="dropdown">
+                                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                        操作
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end">
+                                                        <li><a class="dropdown-item" href="<?php echo SITE_URL; ?>/pages/post.php?id=<?php echo $post['id']; ?>" target="_blank">查看帖子</a></li>
+                                                        <li><a class="dropdown-item" href="<?php echo SITE_URL; ?>/pages/edit.php?id=<?php echo $post['id']; ?>">编辑帖子</a></li>
+                                                        <li><hr class="dropdown-divider"></li>
+                                                        <li><a class="dropdown-item" href="<?php echo SITE_URL; ?>/pages/admin.php?toggle_sticky=<?php echo $post['id']; ?>"><?php echo $post['is_sticky'] ? '取消置顶' : '设为置顶'; ?></a></li>
+                                                        <li><a class="dropdown-item" href="<?php echo SITE_URL; ?>/pages/admin.php?toggle_digest=<?php echo $post['id']; ?>"><?php echo !empty($post['is_digest']) ? '取消精华' : '设为精华'; ?></a></li>
+                                                        <li><a class="dropdown-item" href="<?php echo SITE_URL; ?>/pages/admin.php?toggle_lock=<?php echo $post['id']; ?>"><?php echo $post['is_locked'] ? '解锁帖子' : '锁定帖子'; ?></a></li>
+                                                        <li><hr class="dropdown-divider"></li>
+                                                        <li><a class="dropdown-item text-danger" href="<?php echo SITE_URL; ?>/pages/admin.php?delete_post=<?php echo $post['id']; ?>" onclick="return confirm('确定要删除这篇帖子吗？')">删除帖子</a></li>
+                                                    </ul>
+                                                </div>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -300,10 +316,10 @@ CSS;
                                         <td><?php echo date('Y-m-d H:i', strtotime($user['created_at'])); ?></td>
                                         <td>
                                             <?php if ($user['id'] != $_SESSION['user_id']): ?>
-                                                <a href="<?php echo SITE_URL; ?>/admin.php?toggle_admin=<?php echo $user['id']; ?>" class="btn btn-sm btn-outline-warning">
+                                                <a href="<?php echo SITE_URL; ?>/pages/admin.php?toggle_admin=<?php echo $user['id']; ?>" class="btn btn-sm btn-outline-warning">
                                                     <?php echo $user['role'] === 'admin' ? '取消管理员' : '设为管理员'; ?>
                                                 </a>
-                                                <a href="<?php echo SITE_URL; ?>/admin.php?delete_user=<?php echo $user['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('确定要删除此用户吗？')">删除</a>
+                                                <a href="<?php echo SITE_URL; ?>/pages/admin.php?delete_user=<?php echo $user['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('确定要删除此用户吗？')">删除</a>
                                             <?php else: ?>
                                                 <span class="text-muted">当前用户</span>
                                             <?php endif; ?>
@@ -359,7 +375,7 @@ CSS;
                                     </div>
                                     <small class="text-muted">允许发布的用户ID：留空表示所有用户可发布，多个用户ID用英文逗号隔开，如：1,2,3</small>
                                 </form>
-                                <a href="<?php echo SITE_URL; ?>/admin.php?tab=categories" class="btn btn-outline-secondary btn-sm mt-2">取消编辑</a>
+                                <a href="<?php echo SITE_URL; ?>/pages/admin.php?tab=categories" class="btn btn-outline-secondary btn-sm mt-2">取消编辑</a>
                             </div>
                         </div>
                     <?php else: ?>
@@ -425,8 +441,8 @@ CSS;
                                         </td>
                                         <td><?php echo $cat['sort_order']; ?></td>
                                         <td>
-                                            <a href="<?php echo SITE_URL; ?>/admin.php?tab=categories&edit_category=<?php echo $cat['id']; ?>" class="btn btn-sm btn-outline-warning">编辑</a>
-                                            <a href="<?php echo SITE_URL; ?>/admin.php?delete_category=<?php echo $cat['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('确定要删除此分类吗？')">删除</a>
+                                            <a href="<?php echo SITE_URL; ?>/pages/admin.php?tab=categories&edit_category=<?php echo $cat['id']; ?>" class="btn btn-sm btn-outline-warning">编辑</a>
+                                            <a href="<?php echo SITE_URL; ?>/pages/admin.php?delete_category=<?php echo $cat['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('确定要删除此分类吗？')">删除</a>
                                         </td>
                                     </tr>
                                     <?php if (!empty($cat['children'])): ?>
@@ -446,8 +462,8 @@ CSS;
                                                 <td><span class="text-success">是</span></td>
                                                 <td><?php echo $child['sort_order']; ?></td>
                                                 <td>
-                                                    <a href="<?php echo SITE_URL; ?>/admin.php?tab=categories&edit_category=<?php echo $child['id']; ?>" class="btn btn-sm btn-outline-warning">编辑</a>
-                                                    <a href="<?php echo SITE_URL; ?>/admin.php?delete_category=<?php echo $child['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('确定要删除此分类吗？')">删除</a>
+                                                    <a href="<?php echo SITE_URL; ?>/pages/admin.php?tab=categories&edit_category=<?php echo $child['id']; ?>" class="btn btn-sm btn-outline-warning">编辑</a>
+                                                    <a href="<?php echo SITE_URL; ?>/pages/admin.php?delete_category=<?php echo $child['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('确定要删除此分类吗？')">删除</a>
                                                 </td>
                                             </tr>
                                         <?php endforeach; ?>
@@ -488,7 +504,7 @@ CSS;
                                         </div>
                                     </div>
                                 </form>
-                                <a href="<?php echo SITE_URL; ?>/admin.php?tab=links" class="btn btn-outline-secondary btn-sm mt-2">取消编辑</a>
+                                <a href="<?php echo SITE_URL; ?>/pages/admin.php?tab=links" class="btn btn-outline-secondary btn-sm mt-2">取消编辑</a>
                             </div>
                         </div>
                     <?php else: ?>
@@ -540,9 +556,9 @@ CSS;
                                                 </span>
                                             </td>
                                             <td>
-                                                <a href="<?php echo SITE_URL; ?>/admin.php?tab=links&edit_link=<?php echo $link['id']; ?>" class="btn btn-sm btn-outline-warning">编辑</a>
-                                                <a href="<?php echo SITE_URL; ?>/admin.php?toggle_link=<?php echo $link['id']; ?>" class="btn btn-sm btn-outline-<?php echo $link['is_visible'] ? 'secondary' : 'success'; ?>"><?php echo $link['is_visible'] ? '隐藏' : '显示'; ?></a>
-                                                <a href="<?php echo SITE_URL; ?>/admin.php?delete_link=<?php echo $link['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('确定要删除此链接吗？')">删除</a>
+                                                <a href="<?php echo SITE_URL; ?>/pages/admin.php?tab=links&edit_link=<?php echo $link['id']; ?>" class="btn btn-sm btn-outline-warning">编辑</a>
+                                                <a href="<?php echo SITE_URL; ?>/pages/admin.php?toggle_link=<?php echo $link['id']; ?>" class="btn btn-sm btn-outline-<?php echo $link['is_visible'] ? 'secondary' : 'success'; ?>"><?php echo $link['is_visible'] ? '隐藏' : '显示'; ?></a>
+                                                <a href="<?php echo SITE_URL; ?>/pages/admin.php?delete_link=<?php echo $link['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('确定要删除此链接吗？')">删除</a>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -578,7 +594,7 @@ CSS;
                                         </div>
                                     </div>
                                 </form>
-                                <a href="<?php echo SITE_URL; ?>/admin.php?tab=levels" class="btn btn-outline-secondary btn-sm mt-2">取消编辑</a>
+                                <a href="<?php echo SITE_URL; ?>/pages/admin.php?tab=levels" class="btn btn-outline-secondary btn-sm mt-2">取消编辑</a>
                             </div>
                         </div>
                     <?php else: ?>
@@ -623,14 +639,14 @@ CSS;
                                     <?php foreach ($userLevels as $i => $level): ?>
                                         <tr>
                                             <td>
-                                                <a href="<?php echo SITE_URL; ?>/admin.php?move_level_up=<?php echo $level['id']; ?>" class="btn btn-sm btn-outline-secondary <?php echo $i === 0 ? 'disabled' : ''; ?>">↑</a>
-                                                <a href="<?php echo SITE_URL; ?>/admin.php?move_level_down=<?php echo $level['id']; ?>" class="btn btn-sm btn-outline-secondary <?php echo $i === count($userLevels) - 1 ? 'disabled' : ''; ?>">↓</a>
+                                                <a href="<?php echo SITE_URL; ?>/pages/admin.php?move_level_up=<?php echo $level['id']; ?>" class="btn btn-sm btn-outline-secondary <?php echo $i === 0 ? 'disabled' : ''; ?>">↑</a>
+                                                <a href="<?php echo SITE_URL; ?>/pages/admin.php?move_level_down=<?php echo $level['id']; ?>" class="btn btn-sm btn-outline-secondary <?php echo $i === count($userLevels) - 1 ? 'disabled' : ''; ?>">↓</a>
                                             </td>
                                             <td><strong><?php echo escape($level['name']); ?></strong></td>
                                             <td><?php echo number_format($level['min_points']); ?> - <?php echo number_format($level['max_points']); ?> <?php echo getPointsName(); ?></td>
                                             <td>
-                                                <a href="<?php echo SITE_URL; ?>/admin.php?tab=levels&edit_level=<?php echo $level['id']; ?>" class="btn btn-sm btn-outline-warning">编辑</a>
-                                                <a href="<?php echo SITE_URL; ?>/admin.php?delete_level=<?php echo $level['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('确定要删除此等级吗？')">删除</a>
+                                                <a href="<?php echo SITE_URL; ?>/pages/admin.php?tab=levels&edit_level=<?php echo $level['id']; ?>" class="btn btn-sm btn-outline-warning">编辑</a>
+                                                <a href="<?php echo SITE_URL; ?>/pages/admin.php?delete_level=<?php echo $level['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('确定要删除此等级吗？')">删除</a>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -680,7 +696,7 @@ CSS;
                                 <div class="d-flex gap-2">
                                     <button type="submit" name="save_announcement" class="btn btn-primary"><?php echo $editAnnouncement ? '更新' : '添加'; ?></button>
                                     <?php if ($editAnnouncement): ?>
-                                        <a href="<?php echo SITE_URL; ?>/admin.php?tab=announcements" class="btn btn-outline-secondary">取消</a>
+                                        <a href="<?php echo SITE_URL; ?>/pages/admin.php?tab=announcements" class="btn btn-outline-secondary">取消</a>
                                     <?php endif; ?>
                                 </div>
                             </form>
@@ -721,11 +737,11 @@ CSS;
                                             </td>
                                             <td><?php echo date('Y-m-d H:i', strtotime($announcement['created_at'])); ?></td>
                                             <td>
-                                                <a href="<?php echo SITE_URL; ?>/admin.php?tab=announcements&toggle_announcement=<?php echo $announcement['id']; ?>" class="btn btn-sm btn-outline-<?php echo $announcement['is_enabled'] ? 'warning' : 'success'; ?>">
+                                                <a href="<?php echo SITE_URL; ?>/pages/admin.php?tab=announcements&toggle_announcement=<?php echo $announcement['id']; ?>" class="btn btn-sm btn-outline-<?php echo $announcement['is_enabled'] ? 'warning' : 'success'; ?>">
                                                     <?php echo $announcement['is_enabled'] ? '禁用' : '启用'; ?>
                                                 </a>
-                                                <a href="<?php echo SITE_URL; ?>/admin.php?tab=announcements&edit_announcement=<?php echo $announcement['id']; ?>" class="btn btn-sm btn-outline-primary">编辑</a>
-                                                <a href="<?php echo SITE_URL; ?>/admin.php?tab=announcements&delete_announcement=<?php echo $announcement['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('确定要删除此公告吗？')">删除</a>
+                                                <a href="<?php echo SITE_URL; ?>/pages/admin.php?tab=announcements&edit_announcement=<?php echo $announcement['id']; ?>" class="btn btn-sm btn-outline-primary">编辑</a>
+                                                <a href="<?php echo SITE_URL; ?>/pages/admin.php?tab=announcements&delete_announcement=<?php echo $announcement['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('确定要删除此公告吗？')">删除</a>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -1124,7 +1140,7 @@ CSS;
                     
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 class="mb-0">邀请码列表</h5>
-                        <a href="<?php echo SITE_URL; ?>/admin.php?delete_all_unused_codes=1" class="btn btn-outline-danger btn-sm" onclick="return confirm('确定要删除所有未使用的邀请码吗？')">删除所有未使用的邀请码</a>
+                        <a href="<?php echo SITE_URL; ?>/pages/admin.php?delete_all_unused_codes=1" class="btn btn-outline-danger btn-sm" onclick="return confirm('确定要删除所有未使用的邀请码吗？')">删除所有未使用的邀请码</a>
                     </div>
                     
                     <div class="table-responsive">
@@ -1145,7 +1161,7 @@ CSS;
                                             <td><?php echo escape($code['created_by_name'] ?? '未知'); ?></td>
                                             <td><?php echo date('Y-m-d H:i', strtotime($code['created_at'])); ?></td>
                                             <td>
-                                                <a href="<?php echo SITE_URL; ?>/admin.php?delete_invite_code=<?php echo $code['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('确定要删除此邀请码吗？')">删除</a>
+                                                <a href="<?php echo SITE_URL; ?>/pages/admin.php?delete_invite_code=<?php echo $code['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('确定要删除此邀请码吗？')">删除</a>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>

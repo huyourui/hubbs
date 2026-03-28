@@ -7,15 +7,15 @@
  * @website https://huyourui.com
  * @license MIT License
  */
-require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/../functions.php';
 
 if (isLoggedIn()) {
-    redirect('index.php');
+    redirect('');
 }
 
 if (getSetting('allow_register', '1') !== '1') {
     flashMessage('系统已关闭新用户注册', 'error');
-    redirect('login.php');
+    redirect('pages/login.php');
 }
 
 $emailVerifyEnabled = getSetting('email_verify_register', '0') === '1';
@@ -183,7 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_role'] = 'user';
             
             flashMessage('注册成功，欢迎加入！', 'success');
-            redirect('index.php');
+            redirect('');
         } else {
             $errors[] = '注册失败，请稍后重试';
         }

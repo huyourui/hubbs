@@ -7,10 +7,10 @@
  * @website https://huyourui.com
  * @license MIT License
  */
-require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/../functions.php';
 
 if (isLoggedIn()) {
-    redirect('index.php');
+    redirect('');
 }
 
 $errors = [];
