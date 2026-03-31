@@ -6,6 +6,37 @@
 define('HUBBS_ROOT', dirname(__DIR__) . '/');
 $lockFile = HUBBS_ROOT . 'install.lock';
 
+// 加载版本号定义
+require_once HUBBS_ROOT . 'core/config.php';
+
+/**
+ * 安全处理SQL标识符（数据库名、表名、字段名等）
+ * 防止SQL注入攻击
+ * @param string $identifier 标识符
+ * @return string 处理后的标识符
+ */
+function backquoteIdentifier($identifier) {
+    // 移除反引号防止注入
+    $identifier = str_replace('`', '', $identifier);
+    // 只允许字母数字下划线
+    if (!preg_match('/^[a-zA-Z0-9_]+$/', $identifier)) {
+        throw new Exception('非法的数据库标识符，只允许字母、数字和下划线');
+    }
+    return '`' . $identifier . '`';
+}
+
+/**
+ * 验证表前缀（只允许字母数字下划线）
+ * @param string $prefix 前缀
+ * @return string 验证后的前缀
+ */
+function validatePrefix($prefix) {
+    if (!preg_match('/^[a-zA-Z0-9_]*$/', $prefix)) {
+        throw new Exception('非法的表前缀，只允许字母、数字和下划线');
+    }
+    return $prefix;
+}
+
 // 检查是否已安装
 if (file_exists($lockFile)) {
     die('系统已安装！如需重新安装，请删除 install.lock 文件。');
@@ -36,9 +67,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo = new PDO($dsn, $config['user'], $config['pass']);
                 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                 
-                // 创建数据库
-                $pdo->exec("CREATE DATABASE IF NOT EXISTS {$config['name']} CHARACTER SET {$config['charset']} COLLATE {$config['charset']}_unicode_ci");
-                $pdo->exec("USE {$config['name']}");
+                // 创建数据库 - 使用反引号包裹标识符防止SQL注入
+                $dbName = backquoteIdentifier($config['name']);
+                $charset = backquoteIdentifier($config['charset']);
+                $pdo->exec("CREATE DATABASE IF NOT EXISTS {$dbName} CHARACTER SET {$charset} COLLATE {$charset}_unicode_ci");
+                $pdo->exec("USE {$dbName}");
                 
                 // 创建表
                 createTables($pdo, $config);
@@ -91,9 +124,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 function createTables($pdo, $config) {
-    $prefix = $config['prefix'];
-    $engine = $config['engine'];
-    $charset = $config['charset'];
+    // 验证表前缀安全性
+    $prefix = validatePrefix($config['prefix']);
+    $engine = backquoteIdentifier($config['engine']);
+    $charset = backquoteIdentifier($config['charset']);
+    
+    // 开始事务
+    $pdo->beginTransaction();
     
     // 禁用外键检查，避免删除表时因外键约束而失败
     $pdo->exec("SET FOREIGN_KEY_CHECKS = 0");
@@ -337,7 +374,7 @@ function createTables($pdo, $config) {
         ['site_subtitle', '开源论坛程序', '网站副标题'],
         ['site_keywords', 'HuBBS,论坛,开源,PHP', '网站关键词'],
         ['site_description', 'HuBBS是一款轻量级开源论坛程序', '网站描述'],
-        ['site_copyright', 'HuBBS - 开源论坛程序 v1.0.0', '版权信息'],
+        ['site_copyright', 'HuBBS - 开源论坛程序 v' . HUBBS_VERSION, '版权信息'],
         ['enable_register', '1', '是否开放注册'],
         ['is_force_forum', '1', '是否强制选择分类'],
         ['register_email_suffix', '', '注册邮箱后缀限制'],
@@ -385,9 +422,18 @@ function createTables($pdo, $config) {
     
     // 记录迁移版本（安装时已完成所有迁移）
     $pdo->exec("INSERT INTO {$prefix}migrations (version, executed_at) VALUES (17, NOW())");
+    
+    // 提交事务
+    $pdo->commit();
 }
 
 function saveConfig($config, $salt) {
+    // 生成加密密钥（基于安装时的随机盐值）
+    $encryptionKey = hash('sha256', $salt . 'hubbs_encryption_key', true);
+    
+    // 加密数据库密码
+    $encryptedPass = encryptData($config['pass'], $encryptionKey);
+    
     $content = "<?php\n";
     $content .= "// HuBBS 配置文件 - 自动生成\n";
     $content .= "// 生成时间: " . date('Y-m-d H:i:s') . "\n\n";
@@ -395,7 +441,8 @@ function saveConfig($config, $salt) {
     $content .= "    'host'    => '{$config['host']}',\n";
     $content .= "    'port'    => {$config['port']},\n";
     $content .= "    'user'    => '{$config['user']}',\n";
-    $content .= "    'pass'    => '{$config['pass']}',\n";
+    $content .= "    'pass'    => '{$encryptedPass}',\n";
+    $content .= "    'pass_encrypted' => true,\n";
     $content .= "    'name'    => '{$config['name']}',\n";
     $content .= "    'charset' => '{$config['charset']}',\n";
     $content .= "    'prefix'  => '{$config['prefix']}',\n";
@@ -410,6 +457,34 @@ function saveConfig($config, $salt) {
     }
     
     file_put_contents($dataDir . '/config.php', $content);
+}
+
+/**
+ * 加密数据
+ * @param string $data 要加密的数据
+ * @param string $key 加密密钥
+ * @return string 加密后的数据（base64编码）
+ */
+function encryptData($data, $key) {
+    $iv = random_bytes(16);
+    $encrypted = openssl_encrypt($data, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv);
+    return base64_encode($iv . $encrypted);
+}
+
+/**
+ * 解密数据
+ * @param string $data 加密的数据（base64编码）
+ * @param string $key 解密密钥
+ * @return string|false 解密后的数据或false
+ */
+function decryptData($data, $key) {
+    $data = base64_decode($data);
+    if ($data === false || strlen($data) < 16) {
+        return false;
+    }
+    $iv = substr($data, 0, 16);
+    $encrypted = substr($data, 16);
+    return openssl_decrypt($encrypted, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv);
 }
 ?>
 <!DOCTYPE html>
@@ -545,7 +620,7 @@ function saveConfig($config, $salt) {
         <div class="logo">
             <h1>Hu<span>BBS</span></h1>
         </div>
-        <div class="version">Version 1.0.0</div>
+        <div class="version">Version <?php echo HUBBS_VERSION; ?></div>
         
         <div class="step-bar">
             <div class="step <?php echo $step >= 1 ? 'active' : ''; ?>">1</div>

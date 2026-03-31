@@ -19,11 +19,54 @@ class DB {
         ];
         
         try {
-            $this->pdo = new PDO($dsn, $config['user'], $config['pass'], $options);
+            // 获取数据库密码（支持加密存储）
+            $password = self::getDecryptedPassword($config);
+            $this->pdo = new PDO($dsn, $config['user'], $password, $options);
             $this->prefix = $config['prefix'];
         } catch (PDOException $e) {
             throw new Exception("数据库连接失败: " . $e->getMessage());
         }
+    }
+    
+    /**
+     * 获取解密后的数据库密码
+     * @param array $config 数据库配置
+     * @return string 解密后的密码
+     */
+    private static function getDecryptedPassword($config) {
+        // 如果密码未加密，直接返回
+        if (empty($config['pass_encrypted'])) {
+            return $config['pass'];
+        }
+        
+        // 获取加密密钥
+        global $hubbs_salt;
+        $encryptionKey = hash('sha256', $hubbs_salt . 'hubbs_encryption_key', true);
+        
+        // 解密密码
+        $decrypted = self::decryptData($config['pass'], $encryptionKey);
+        
+        if ($decrypted === false) {
+            throw new Exception("数据库密码解密失败");
+        }
+        
+        return $decrypted;
+    }
+    
+    /**
+     * 解密数据
+     * @param string $data 加密的数据（base64编码）
+     * @param string $key 解密密钥
+     * @return string|false 解密后的数据或false
+     */
+    private static function decryptData($data, $key) {
+        $data = base64_decode($data);
+        if ($data === false || strlen($data) < 16) {
+            return false;
+        }
+        $iv = substr($data, 0, 16);
+        $encrypted = substr($data, 16);
+        return openssl_decrypt($encrypted, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv);
     }
     
     public static function getInstance($config = null) {

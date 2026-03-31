@@ -1,7 +1,6 @@
 <?php
 /**
- * HuBBS - 论坛入口文件
- * Version: 1.0.0
+ * HuBBS - 轻量级开源论坛系统
  */
 
 define('HUBBS_ROOT', __DIR__ . '/');

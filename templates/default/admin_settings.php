@@ -50,8 +50,8 @@ include __DIR__ . '/admin_header.php';
             
             <div class="form-group">
                 <label>版权信息</label>
-                <input type="text" name="site_copyright" value="<?php e($settings['site_copyright'] ?? 'HuBBS - 开源论坛程序 v1.0.0'); ?>">
-                <span class="form-hint">网站底部版权信息，如：HuBBS - 开源论坛程序 v1.0.0</span>
+                <input type="text" name="site_copyright" value="<?php e($settings['site_copyright'] ?? 'HuBBS - 开源论坛程序 v' . HUBBS_VERSION); ?>">
+                <span class="form-hint">网站底部版权信息，如：HuBBS - 开源论坛程序 v<?php echo HUBBS_VERSION; ?></span>
             </div>
         </div>
         

@@ -64,7 +64,7 @@ class AdminModule {
         // 论坛版本信息
         $appInfo = [
             'name' => 'HuBBS',
-            'version' => '1.0.0',
+            'version' => HUBBS_VERSION,
             'release_date' => '2024-01-01',
         ];
 
