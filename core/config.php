@@ -1,7 +1,7 @@
 <?php
 /**
  * HuBBS Forum - 核心配置文件
- * Version: 1.1.0
+ * Version: 1.2.0
  * PHP 7.4+ | MySQL 5.7+
  */
 
@@ -10,7 +10,7 @@ if (!defined('HUBBS_ROOT')) {
 }
 
 // 版本信息
-define('HUBBS_VERSION', '1.1.0');
+define('HUBBS_VERSION', '1.2.0');
 define('HUBBS_NAME', 'HuBBS');
 
 // 数据库配置（安装后会被覆盖）
