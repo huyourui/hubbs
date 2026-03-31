@@ -1,0 +1,472 @@
+/**
+ * HuBBS Editor - Markdown + WYSIWYG 双模式编辑器
+ * 简洁、高效、易用
+ */
+
+.hubbs-editor {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: #fff;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* 工具栏 */
+.editor-toolbar {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background: #fafafa;
+    border-bottom: 1px solid #e0e0e0;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.toolbar-group {
+    display: flex;
+    gap: 2px;
+    padding-right: 8px;
+    margin-right: 8px;
+    border-right: 1px solid #e0e0e0;
+}
+
+.toolbar-group:last-child {
+    border-right: none;
+    margin-right: 0;
+    padding-right: 0;
+}
+
+.toolbar-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.toolbar-btn:hover {
+    background: #e6e6e6;
+    color: #333;
+}
+
+.toolbar-btn.active {
+    background: #ff6b6b;
+    color: #fff;
+}
+
+.toolbar-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* 下拉菜单容器 */
+.toolbar-dropdown {
+    position: relative;
+}
+
+.toolbar-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 1000;
+    min-width: 80px;
+}
+
+.toolbar-dropdown-menu.active {
+    display: block;
+}
+
+.toolbar-dropdown-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.toolbar-dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.toolbar-dropdown-item:hover {
+    background: #f5f5f5;
+}
+
+/* 对齐下拉菜单样式 */
+.toolbar-align-menu {
+    min-width: 140px;
+}
+
+.toolbar-align-menu .toolbar-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+}
+
+.toolbar-align-menu .toolbar-dropdown-item svg {
+    flex-shrink: 0;
+    color: #666;
+}
+
+.toolbar-align-menu .toolbar-dropdown-item span {
+    font-size: 13px;
+    color: #333;
+}
+
+/* 颜色选择器包装器 */
+.toolbar-color-wrapper {
+    position: relative;
+}
+
+.toolbar-color-input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+.toolbar-divider {
+    width: 1px;
+    height: 20px;
+    background: #e0e0e0;
+    margin: 0 4px;
+}
+
+/* 模式切换 */
+.editor-mode-switch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    font-size: 13px;
+    color: #666;
+}
+
+.mode-btn {
+    padding: 4px 12px;
+    border: 1px solid #d9d9d9;
+    background: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.mode-btn:hover {
+    border-color: #ff6b6b;
+    color: #ff6b6b;
+}
+
+.mode-btn.active {
+    background: #ff6b6b;
+    border-color: #ff6b6b;
+    color: #fff;
+}
+
+/* 编辑器主体 */
+.editor-body {
+    position: relative;
+    height: 300px;
+}
+
+.editor-textarea,
+.editor-preview,
+.editor-wysiwyg {
+    width: 100%;
+    height: 300px;
+    padding: 16px;
+    border: none;
+    outline: none;
+    font-size: 15px;
+    line-height: 1.8;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+.editor-textarea {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    background: #fafafa;
+    color: #333;
+    tab-size: 4;
+    resize: none;
+}
+
+.editor-preview {
+    background: #fff;
+}
+
+.editor-wysiwyg {
+    background: #fff;
+    cursor: text;
+}
+
+.editor-wysiwyg:empty:before {
+    content: attr(placeholder);
+    color: #999;
+    pointer-events: none;
+}
+
+/* 编辑器面板默认显示 */
+.editor-body .editor-pane {
+    display: block;
+}
+
+/* 双栏模式 */
+.editor-body.split-mode {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    height: 300px;
+}
+
+.editor-body.split-mode .editor-pane {
+    display: block;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.editor-body.split-mode .editor-textarea {
+    border-right: 1px solid #e0e0e0;
+}
+
+/* Markdown 预览样式 */
+.editor-preview h1,
+.editor-preview h2,
+.editor-preview h3,
+.editor-preview h4,
+.editor-preview h5,
+.editor-preview h6,
+.editor-wysiwyg h1,
+.editor-wysiwyg h2,
+.editor-wysiwyg h3,
+.editor-wysiwyg h4,
+.editor-wysiwyg h5,
+.editor-wysiwyg h6 {
+    margin: 24px 0 16px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: #333;
+}
+
+.editor-preview h1,
+.editor-wysiwyg h1 {
+    font-size: 24px;
+    border-bottom: 2px solid #ff6b6b;
+    padding-bottom: 8px;
+}
+
+.editor-preview h2,
+.editor-wysiwyg h2 {
+    font-size: 20px;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 6px;
+}
+
+.editor-preview h3,
+.editor-wysiwyg h3 {
+    font-size: 18px;
+}
+
+.editor-preview p,
+.editor-wysiwyg p {
+    margin: 12px 0;
+    line-height: 1.8;
+}
+
+.editor-preview ul,
+.editor-preview ol,
+.editor-wysiwyg ul,
+.editor-wysiwyg ol {
+    margin: 12px 0;
+    padding-left: 24px;
+}
+
+.editor-preview li,
+.editor-wysiwyg li {
+    margin: 6px 0;
+}
+
+.editor-preview blockquote,
+.editor-wysiwyg blockquote {
+    margin: 16px 0;
+    padding: 12px 16px;
+    border-left: 4px solid #ff6b6b;
+    background: #f9f9f9;
+    color: #666;
+}
+
+.editor-preview code,
+.editor-wysiwyg code {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    background: #f5f5f5;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 14px;
+    color: #e83e8c;
+}
+
+.editor-preview pre,
+.editor-wysiwyg pre {
+    background: #2d2d2d;
+    color: #f8f8f2;
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 16px 0;
+}
+
+.editor-preview pre code,
+.editor-wysiwyg pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+}
+
+.editor-preview a,
+.editor-wysiwyg a {
+    color: #ff6b6b;
+    text-decoration: none;
+}
+
+.editor-preview a:hover,
+.editor-wysiwyg a:hover {
+    text-decoration: underline;
+}
+
+.editor-preview img,
+.editor-wysiwyg img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+}
+
+.editor-preview table,
+.editor-wysiwyg table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+}
+
+.editor-preview th,
+.editor-preview td,
+.editor-wysiwyg th,
+.editor-wysiwyg td {
+    border: 1px solid #e0e0e0;
+    padding: 8px 12px;
+    text-align: left;
+}
+
+.editor-preview th,
+.editor-wysiwyg th {
+    background: #f5f5f5;
+    font-weight: 600;
+}
+
+.editor-preview hr,
+.editor-wysiwyg hr {
+    border: none;
+    border-top: 2px solid #e0e0e0;
+    margin: 24px 0;
+}
+
+/* 选中样式 */
+.editor-wysiwyg ::selection {
+    background: #ff6b6b;
+    color: #fff;
+}
+
+/* 工具提示 */
+.toolbar-btn[title]:hover:after {
+    content: attr(title);
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 8px;
+    background: #333;
+    color: #fff;
+    font-size: 12px;
+    border-radius: 4px;
+    white-space: nowrap;
+    z-index: 100;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .editor-toolbar {
+        padding: 6px 8px;
+    }
+    
+    .toolbar-btn {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .toolbar-btn svg {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .editor-mode-switch {
+        font-size: 12px;
+    }
+    
+    .mode-btn {
+        padding: 3px 8px;
+        font-size: 12px;
+    }
+    
+    .editor-body.split-mode {
+        grid-template-columns: 1fr;
+    }
+    
+    .editor-body.split-mode .editor-textarea {
+        border-right: none;
+        border-bottom: 1px solid #e0e0e0;
+    }
+}
+
+/* 暗色模式支持 */
+@media (prefers-color-scheme: dark) {
+    .hubbs-editor {
+        border-color: #444;
+        background: #2d2d2d;
+    }
+    
+    .editor-toolbar {
+        background: #3d3d3d;
+        border-color: #444;
+    }
+    
+    .toolbar-btn {
+        color: #ccc;
+    }
+    
+    .toolbar-btn:hover {
+        background: #4d4d4d;
+        color: #fff;
+    }
+    
+    .editor-textarea {
+        background: #2d2d2d;
+        color: #f0f0f0;
+    }
+    
+    .editor-preview,
+    .editor-wysiwyg {
+        background: #2d2d2d;
+        color: #f0f0f0;
+    }
+}

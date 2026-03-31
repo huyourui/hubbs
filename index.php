@@ -1,17 +1,66 @@
 <?php
 /**
- * HuBBS - An Open Source Forum System
- * 
- * 入口文件
- * 
- * @author  古雨月田
- * @QQ      281900864
- * @website https://huyourui.com
- * @license MIT License
+ * HuBBS - 论坛入口文件
+ * Version: 1.0.0
  */
 
-/* 引入核心函数库 */
-require_once __DIR__ . '/functions.php';
+define('HUBBS_ROOT', __DIR__ . '/');
 
-/* 路由到首页 */
-require_once __DIR__ . '/pages/home.php';
+// 检查是否已安装
+if (!file_exists(HUBBS_ROOT . 'install.lock')) {
+    header('Location: install/');
+    exit;
+}
+
+// 加载核心文件
+require_once HUBBS_ROOT . 'core/config.php';
+require_once HUBBS_ROOT . 'core/db.php';
+require_once HUBBS_ROOT . 'core/functions.php';
+require_once HUBBS_ROOT . 'core/auth.php';
+require_once HUBBS_ROOT . 'core/migrate.php';
+require_once HUBBS_ROOT . 'core/settings.php';
+require_once HUBBS_ROOT . 'core/notification.php';
+require_once HUBBS_ROOT . 'core/upload.php';
+
+// 执行数据库迁移（无感）
+Migrate::run();
+
+// 初始化认证
+Auth::init();
+
+// 路由处理
+$module = $_GET['module'] ?? 'post';
+$action = $_GET['action'] ?? 'list';
+
+// 加载模块
+$moduleFile = HUBBS_ROOT . 'modules/' . $module . '.php';
+if (file_exists($moduleFile)) {
+    require_once $moduleFile;
+    $className = ucfirst($module) . 'Module';
+    if (class_exists($className)) {
+        $moduleObj = new $className();
+        $result = $moduleObj->handle();
+        
+        if (is_array($result) && isset($result['template'])) {
+            // 渲染模板
+            $templateData = $result['data'] ?? [];
+            extract($templateData);
+            $templateFile = HUBBS_ROOT . 'templates/default/' . $result['template'] . '.php';
+            if (file_exists($templateFile)) {
+                include $templateFile;
+            } else {
+                die('模板不存在: ' . $result['template']);
+            }
+        }
+    }
+} else {
+    // 默认首页
+    require_once HUBBS_ROOT . 'modules/post.php';
+    $moduleObj = new PostModule();
+    $result = $moduleObj->handle();
+    if (is_array($result) && isset($result['template'])) {
+        $templateData = $result['data'] ?? [];
+        extract($templateData);
+        include HUBBS_ROOT . 'templates/default/' . $result['template'] . '.php';
+    }
+}
