@@ -97,7 +97,7 @@ class PostModule {
         // 检查用户是否被禁言
         if (Auth::check()) {
             $currentUser = Auth::user();
-            if ($currentUser && $currentUser['is_banned']) {
+            if ($currentUser && !empty($currentUser['is_banned'])) {
                 set_message('您已被禁言，无法发帖', 'error');
                 redirect('index.php');
             }
