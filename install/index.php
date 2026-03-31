@@ -67,6 +67,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 $success = '安装成功！';
                 $step = 3;
+            } catch (PDOException $e) {
+                // 数据库错误处理
+                $errorCode = $e->getCode();
+                $errorMsg = $e->getMessage();
+                
+                if (strpos($errorMsg, 'Access denied') !== false) {
+                    $error = '数据库连接失败：用户名或密码错误';
+                } elseif (strpos($errorMsg, 'Unknown database') !== false) {
+                    $error = '数据库不存在，请检查数据库名称';
+                } elseif (strpos($errorMsg, 'Connection refused') !== false || strpos($errorMsg, 'No such host') !== false) {
+                    $error = '无法连接到数据库服务器，请检查主机地址和端口';
+                } elseif (strpos($errorMsg, 'Duplicate entry') !== false) {
+                    $error = '数据重复：' . $errorMsg;
+                } else {
+                    $error = '数据库错误：' . $errorMsg;
+                }
             } catch (Exception $e) {
                 $error = $e->getMessage();
             }
@@ -79,16 +95,33 @@ function createTables($pdo, $config) {
     $engine = $config['engine'];
     $charset = $config['charset'];
     
+    // 禁用外键检查，避免删除表时因外键约束而失败
+    $pdo->exec("SET FOREIGN_KEY_CHECKS = 0");
+    
     // 删除已存在的表（确保使用最新表结构）
+    // 注意：删除顺序需要考虑外键依赖关系，先删除有外键依赖的表
     $tables = [
-        'remember_tokens', 'posts', 'replies', 'reply_comments', 
-        'post_likes', 'post_favorites', 'notifications', 'links',
-        'email_codes', 'uploads', 'settings', 'migrations', 
-        'forums', 'users'
+        // 关联表（有外键依赖的优先删除）
+        'remember_tokens', 'post_likes', 'post_favorites', 
+        'reply_comments', 'replies', 'uploads', 'notifications',
+        'email_codes', 'links', 'settings', 'migrations',
+        // 主表
+        'posts', 'forums', 'users'
     ];
+    
     foreach ($tables as $table) {
-        $pdo->exec("DROP TABLE IF EXISTS {$prefix}{$table}");
+        try {
+            $pdo->exec("DROP TABLE IF EXISTS {$prefix}{$table}");
+        } catch (PDOException $e) {
+            // 忽略删除不存在的表的错误
+            if ($e->getCode() != '42S02') { // 42S02 = 表不存在
+                throw $e;
+            }
+        }
     }
+    
+    // 重新启用外键检查
+    $pdo->exec("SET FOREIGN_KEY_CHECKS = 1");
     
     // 用户表 - 支持亿级数据
     $pdo->exec("CREATE TABLE IF NOT EXISTS {$prefix}users (
@@ -545,6 +578,9 @@ function saveConfig($config, $salt) {
         <form method="post">
             <input type="hidden" name="step" value="2">
             <h3 style="margin-bottom: 20px; color: #333;">数据库配置</h3>
+            <div style="margin-bottom: 20px; padding: 10px; background: #fff3cd; border-radius: 4px; font-size: 13px; color: #856404;">
+                <strong>提示：</strong>如果数据库已存在，安装程序会自动删除旧表并重新创建。如需保留数据，请先备份。
+            </div>
             
             <div class="form-row">
                 <div class="form-group">
