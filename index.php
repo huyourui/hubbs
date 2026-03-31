@@ -16,11 +16,11 @@ if (!file_exists(HUBBS_ROOT . 'install.lock')) {
 require_once HUBBS_ROOT . 'core/config.php';
 require_once HUBBS_ROOT . 'core/db.php';
 require_once HUBBS_ROOT . 'core/functions.php';
-require_once HUBBS_ROOT . 'core/auth.php';
+require_once HUBBS_ROOT . 'core/Auth.php';
 require_once HUBBS_ROOT . 'core/migrate.php';
-require_once HUBBS_ROOT . 'core/settings.php';
+require_once HUBBS_ROOT . 'core/Settings.php';
 require_once HUBBS_ROOT . 'core/notification.php';
-require_once HUBBS_ROOT . 'core/upload.php';
+require_once HUBBS_ROOT . 'core/Upload.php';
 
 // 执行数据库迁移（无感）
 Migrate::run();

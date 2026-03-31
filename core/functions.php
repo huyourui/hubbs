@@ -157,9 +157,22 @@ function get_client_ip() {
 
 // 自动加载
 function hubbs_autoload($class) {
-    $file = HUBBS_ROOT . 'core/' . strtolower($class) . '.php';
-    if (file_exists($file)) {
-        require_once $file;
+    // 类名到文件名的映射（保持与文件名大小写一致）
+    $classMap = [
+        'DB' => 'db.php',
+        'Auth' => 'Auth.php',
+        'Settings' => 'Settings.php',
+        'Mailer' => 'Mailer.php',
+        'Migrate' => 'migrate.php',
+        'Upload' => 'Upload.php',
+        'Notification' => 'notification.php',
+    ];
+    
+    if (isset($classMap[$class])) {
+        $file = HUBBS_ROOT . 'core/' . $classMap[$class];
+        if (file_exists($file)) {
+            require_once $file;
+        }
     }
 }
 spl_autoload_register('hubbs_autoload');
