@@ -120,11 +120,15 @@ class PostModule {
         }
 
         // 过滤掉有子分类的一级分类（只能选择二级分类）
+        // 同时过滤掉用户没有发帖权限的板块
         $selectableForums = [];
         foreach ($allForums as $forum) {
             // 如果是二级分类，或者是一级分类但没有子分类
             if ($forum['parent_id'] > 0 || !isset($childForums[$forum['id']])) {
-                $selectableForums[] = $forum;
+                // 检查用户是否有权限在该板块发帖
+                if ($this->canPostInForum($forum)) {
+                    $selectableForums[] = $forum;
+                }
             }
         }
 
