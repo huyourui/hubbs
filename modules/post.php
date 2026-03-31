@@ -273,10 +273,19 @@ class PostModule {
 
         // 获取板块列表
         $allForums = $db->fetchAll("SELECT * FROM {$db->table('forums')} ORDER BY sort_order ASC");
+
+        // 先过滤掉用户没有发帖权限的板块
+        $allowedForums = [];
+        foreach ($allForums as $forum) {
+            if ($this->canPostInForum($forum)) {
+                $allowedForums[] = $forum;
+            }
+        }
+
         $parentForums = [];
         $childForums = [];
 
-        foreach ($allForums as $forum) {
+        foreach ($allowedForums as $forum) {
             if ($forum['parent_id'] == 0) {
                 $parentForums[] = $forum;
             } else {
@@ -286,7 +295,7 @@ class PostModule {
 
         // 过滤掉有子分类的一级分类
         $selectableForums = [];
-        foreach ($allForums as $forum) {
+        foreach ($allowedForums as $forum) {
             if ($forum['parent_id'] > 0 || !isset($childForums[$forum['id']])) {
                 $selectableForums[] = $forum;
             }
