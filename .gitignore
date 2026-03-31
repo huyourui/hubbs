@@ -1,15 +1,42 @@
-/config/config.php
-/storage/*
-!/storage/.gitignore
-/plugins/*
-!/plugins/.gitignore
-!/plugins/example
-/vendor/
-/.phpunit.cache/
+# 配置文件（包含敏感信息）
+/data/config.php
+
+# 安装锁定文件
+/install.lock
+
+# 上传文件目录
+/uploads/images/*
+/uploads/attachments/*
+!/uploads/images/.gitkeep
+!/uploads/attachments/.gitkeep
+
+# 备份文件
+*.bak
+*.backup
+
+# IDE 和编辑器
 .DS_Store
 .idea/
 .vscode/
-*.log
 *.swp
 *.swo
 *~
+
+# 日志文件
+*.log
+/logs/*
+!/logs/.gitkeep
+
+# 缓存文件
+/cache/*
+!/cache/.gitkeep
+
+# Composer 依赖
+/vendor/
+
+# 测试文件
+/.phpunit.cache/
+
+# 临时文件
+/tmp/*
+!/tmp/.gitkeep
