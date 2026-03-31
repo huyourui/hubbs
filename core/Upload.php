@@ -228,6 +228,46 @@ class Upload {
         $db = DB::getInstance();
         $db->query("UPDATE {$db->table('uploads')} SET post_id = ? WHERE user_id = ? AND post_id IS NULL", [$postId, $userId]);
     }
+
+    /**
+     * 删除帖子关联的所有文件（图片和附件）
+     * @param int $postId 帖子ID
+     * @return array 删除结果
+     */
+    public static function deleteByPost($postId) {
+        $db = DB::getInstance();
+
+        // 获取帖子关联的所有文件
+        $uploads = $db->fetchAll("SELECT * FROM {$db->table('uploads')} WHERE post_id = ?", [$postId]);
+
+        $deletedCount = 0;
+        $failedFiles = [];
+
+        foreach ($uploads as $upload) {
+            // 物理删除文件
+            $filePath = ROOT_DIR . '/' . $upload['file_path'];
+            if (file_exists($filePath)) {
+                if (unlink($filePath)) {
+                    $deletedCount++;
+                } else {
+                    $failedFiles[] = $upload['file_name'];
+                }
+            } else {
+                // 文件不存在，也视为已删除
+                $deletedCount++;
+            }
+
+            // 删除数据库记录
+            $db->query("DELETE FROM {$db->table('uploads')} WHERE id = ?", [$upload['id']]);
+        }
+
+        return [
+            'success' => true,
+            'deleted_count' => $deletedCount,
+            'failed_files' => $failedFiles,
+            'total' => count($uploads)
+        ];
+    }
     
     /**
      * 获取上传错误信息

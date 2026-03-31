@@ -179,28 +179,38 @@ class AdminModule {
     private function postDelete() {
         $db = DB::getInstance();
         $postId = intval($_GET['id'] ?? 0);
-        
+
         if ($postId <= 0) {
             set_message('参数错误', 'error');
             redirect('index.php?module=admin&action=posts');
         }
-        
+
         // 获取帖子信息，用于更新板块帖子数
         $post = $db->fetch("SELECT forum_id FROM {$db->table('posts')} WHERE id = ? LIMIT 1", [$postId]);
-        
+
+        // 删除帖子关联的文件（图片和附件）
+        $deleteResult = Upload::deleteByPost($postId);
+
         // 删除帖子的回复
         $db->delete('replies', 'post_id = ?', [$postId]);
-        
+
         // 删除帖子
         $db->delete('posts', 'id = ?', [$postId]);
-        
+
         // 更新板块帖子数
         if ($post) {
             $count = $db->count('posts', 'forum_id = ?', [$post['forum_id']]);
             $db->update('forums', ['post_count' => $count], 'id = ?', [$post['forum_id']]);
         }
-        
-        set_message('帖子已删除');
+
+        $message = '帖子已删除';
+        if ($deleteResult['total'] > 0) {
+            $message .= "，同时删除了 {$deleteResult['deleted_count']} 个文件";
+            if (!empty($deleteResult['failed_files'])) {
+                $message .= "，{$deleteResult['failed_files']} 个文件删除失败";
+            }
+        }
+        set_message($message);
         redirect('index.php?module=admin&action=posts');
     }
     
@@ -232,8 +242,12 @@ class AdminModule {
                 // 获取所有帖子的板块ID
                 $posts = $db->fetchAll("SELECT id, forum_id FROM {$db->table('posts')} WHERE id IN ({$idList})");
                 $forumIds = [];
+                $totalDeletedFiles = 0;
                 foreach ($posts as $post) {
                     $forumIds[] = $post['forum_id'];
+                    // 删除帖子关联的文件
+                    $deleteResult = Upload::deleteByPost($post['id']);
+                    $totalDeletedFiles += $deleteResult['deleted_count'];
                     // 删除回复
                     $db->delete('replies', 'post_id = ?', [$post['id']]);
                 }
@@ -244,7 +258,11 @@ class AdminModule {
                     $count = $db->count('posts', 'forum_id = ?', [$forumId]);
                     $db->update('forums', ['post_count' => $count], 'id = ?', [$forumId]);
                 }
-                set_message('批量删除成功');
+                $message = '批量删除成功';
+                if ($totalDeletedFiles > 0) {
+                    $message .= "，共删除 {$totalDeletedFiles} 个文件";
+                }
+                set_message($message);
                 break;
                 
             case 'top':
