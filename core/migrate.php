@@ -5,7 +5,7 @@
  */
 
 class Migrate {
-    private static $version = 17;
+    private static $version = 18;
     
     public static function run() {
         $db = DB::getInstance();
@@ -605,6 +605,31 @@ class Migrate {
             // 检查是否存在 description 字段
             if (!self::columnExists($db, 'settings', 'description')) {
                 $db->query("ALTER TABLE {$db->table('settings')} ADD COLUMN description VARCHAR(255) DEFAULT NULL COMMENT '描述' AFTER setting_value");
+            }
+        }
+    }
+
+    /**
+     * 迁移18：添加帖子和回复的编辑次数字段
+     */
+    private static function migrate18($db) {
+        // 为 posts 表添加编辑次数字段
+        if (self::tableExists($db, 'posts')) {
+            if (!self::columnExists($db, 'posts', 'edit_count')) {
+                $db->query("ALTER TABLE {$db->table('posts')} ADD COLUMN edit_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '编辑次数' AFTER updated_at");
+            }
+            if (!self::columnExists($db, 'posts', 'last_edit_at')) {
+                $db->query("ALTER TABLE {$db->table('posts')} ADD COLUMN last_edit_at DATETIME DEFAULT NULL COMMENT '最后编辑时间' AFTER edit_count");
+            }
+        }
+
+        // 为 replies 表添加编辑次数字段
+        if (self::tableExists($db, 'replies')) {
+            if (!self::columnExists($db, 'replies', 'edit_count')) {
+                $db->query("ALTER TABLE {$db->table('replies')} ADD COLUMN edit_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '编辑次数' AFTER created_at");
+            }
+            if (!self::columnExists($db, 'replies', 'last_edit_at')) {
+                $db->query("ALTER TABLE {$db->table('replies')} ADD COLUMN last_edit_at DATETIME DEFAULT NULL COMMENT '最后编辑时间' AFTER edit_count");
             }
         }
     }

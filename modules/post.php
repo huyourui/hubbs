@@ -8,16 +8,20 @@ class PostModule {
     
     public function handle() {
         $action = $_GET['action'] ?? 'list';
-        
+
         switch ($action) {
             case 'list':
                 return $this->list();
             case 'create':
                 return $this->create();
+            case 'edit':
+                return $this->edit();
             case 'view':
                 return $this->view();
             case 'reply':
                 return $this->reply();
+            case 'editReply':
+                return $this->editReply();
             case 'replyComment':
                 return $this->replyComment();
             case 'like':
@@ -129,7 +133,7 @@ class PostModule {
                 $forumId = intval($_POST['forum_id'] ?? 0);
                 $title = trim($_POST['title'] ?? '');
                 $content = trim($_POST['content'] ?? '');
-                
+
                 // 保存表单数据用于回显
                 $formData = [
                     'forum_id' => $forumId,
@@ -199,10 +203,138 @@ class PostModule {
                 }
             }
         }
-        
+
         return [
             'template' => 'post_create',
             'data' => [
+                'parentForums' => $parentForums,
+                'childForums' => $childForums,
+                'selectableForums' => $selectableForums,
+                'error' => $error,
+                'formData' => $formData
+            ]
+        ];
+    }
+
+    /**
+     * 编辑帖子
+     */
+    private function edit() {
+        if (Auth::guest()) {
+            redirect('index.php?module=user&action=login');
+        }
+
+        $db = DB::getInstance();
+        $postId = intval($_GET['id'] ?? 0);
+        $error = '';
+
+        if ($postId <= 0) {
+            set_message('参数错误', 'error');
+            redirect('index.php');
+        }
+
+        // 获取帖子信息
+        $post = $db->fetch("SELECT * FROM {$db->table('posts')} WHERE id = ? LIMIT 1", [$postId]);
+        if (!$post) {
+            set_message('帖子不存在', 'error');
+            redirect('index.php');
+        }
+
+        // 检查权限（只能编辑自己的帖子）
+        if ($post['user_id'] != Auth::id()) {
+            set_message('无权编辑此帖子', 'error');
+            redirect('index.php?module=post&action=view&id=' . $postId);
+        }
+
+        // 获取板块列表
+        $allForums = $db->fetchAll("SELECT * FROM {$db->table('forums')} ORDER BY sort_order ASC");
+        $parentForums = [];
+        $childForums = [];
+
+        foreach ($allForums as $forum) {
+            if ($forum['parent_id'] == 0) {
+                $parentForums[] = $forum;
+            } else {
+                $childForums[$forum['parent_id']][] = $forum;
+            }
+        }
+
+        // 过滤掉有子分类的一级分类
+        $selectableForums = [];
+        foreach ($allForums as $forum) {
+            if ($forum['parent_id'] > 0 || !isset($childForums[$forum['id']])) {
+                $selectableForums[] = $forum;
+            }
+        }
+
+        // 初始化表单数据
+        $formData = [
+            'forum_id' => $post['forum_id'],
+            'title' => $post['title'],
+            'content' => $post['content']
+        ];
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!verify_csrf($_POST['csrf_token'] ?? '')) {
+                $error = '安全验证失败';
+            } else {
+                $forumId = intval($_POST['forum_id'] ?? 0);
+                $title = trim($_POST['title'] ?? '');
+                $content = trim($_POST['content'] ?? '');
+
+                // 保存表单数据用于回显
+                $formData = [
+                    'forum_id' => $forumId,
+                    'title' => $title,
+                    'content' => $content
+                ];
+
+                // 检查是否强制选择分类
+                if (Settings::get('is_force_forum', '1') === '1' && $forumId <= 0) {
+                    $error = '请选择板块';
+                } elseif ($forumId > 0) {
+                    $selectedForum = null;
+                    foreach ($allForums as $f) {
+                        if ($f['id'] == $forumId) {
+                            $selectedForum = $f;
+                            break;
+                        }
+                    }
+                    if ($selectedForum && $selectedForum['parent_id'] == 0 && isset($childForums[$forumId])) {
+                        $error = '请选择二级分类';
+                    }
+                }
+
+                if (empty($error)) {
+                    if (empty($title) || mb_strlen($title) < 2) {
+                        $error = '标题至少2个字';
+                    } elseif (empty($content) || mb_strlen($content) < 5) {
+                        $error = '内容至少5个字';
+                    } else {
+                        // 更新帖子
+                        $db->update('posts', [
+                            'forum_id' => $forumId,
+                            'title' => $title,
+                            'content' => $content,
+                            'updated_at' => date('Y-m-d H:i:s'),
+                            'edit_count' => $post['edit_count'] + 1,
+                            'last_edit_at' => date('Y-m-d H:i:s')
+                        ], 'id = ?', [$postId]);
+
+                        // 关联上传的文件到帖子
+                        Upload::linkToPost(Auth::id(), $postId);
+
+                        set_message('编辑成功');
+                        redirect('index.php?module=post&action=view&id=' . $postId);
+                    }
+                }
+            }
+        }
+
+        return [
+            'template' => 'post_edit',
+            'data' => [
+                'post' => $post,
                 'parentForums' => $parentForums,
                 'childForums' => $childForums,
                 'selectableForums' => $selectableForums,
@@ -397,7 +529,75 @@ class PostModule {
         set_message('回复成功');
         redirect('index.php?module=post&action=view&id=' . $postId);
     }
-    
+
+    /**
+     * 编辑一级回复
+     */
+    private function editReply() {
+        if (Auth::guest()) {
+            redirect('index.php?module=user&action=login');
+        }
+
+        $db = DB::getInstance();
+        $replyId = intval($_GET['id'] ?? 0);
+        $postId = intval($_GET['post_id'] ?? 0);
+
+        if ($replyId <= 0) {
+            set_message('参数错误', 'error');
+            redirect('index.php');
+        }
+
+        // 获取回复信息
+        $reply = $db->fetch("SELECT * FROM {$db->table('replies')} WHERE id = ? LIMIT 1", [$replyId]);
+        if (!$reply) {
+            set_message('回复不存在', 'error');
+            redirect('index.php');
+        }
+
+        // 检查权限（只能编辑自己的回复）
+        if ($reply['user_id'] != Auth::id()) {
+            set_message('无权编辑此回复', 'error');
+            redirect('index.php?module=post&action=view&id=' . $reply['post_id']);
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!verify_csrf($_POST['csrf_token'] ?? '')) {
+                set_message('安全验证失败', 'error');
+                redirect('index.php?module=post&action=view&id=' . $reply['post_id']);
+            }
+
+            $content = trim($_POST['content'] ?? '');
+
+            if (empty($content) || mb_strlen($content) < 2) {
+                set_message('回复内容至少2个字', 'error');
+                redirect('index.php?module=post&action=view&id=' . $reply['post_id']);
+            }
+
+            // 更新回复
+            $db->update('replies', [
+                'content' => $content,
+                'edit_count' => $reply['edit_count'] + 1,
+                'last_edit_at' => date('Y-m-d H:i:s')
+            ], 'id = ?', [$replyId]);
+
+            set_message('编辑成功');
+            redirect('index.php?module=post&action=view&id=' . $reply['post_id']);
+        }
+
+        // 如果是AJAX请求，返回JSON
+        if ($this->isAjaxRequest()) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'reply' => $reply
+            ]);
+            exit;
+        }
+
+        // 非AJAX请求重定向到帖子页面
+        redirect('index.php?module=post&action=view&id=' . $reply['post_id']);
+    }
+
     private function replyComment() {
         if (Auth::guest()) {
             redirect('index.php?module=user&action=login');

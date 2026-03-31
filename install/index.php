@@ -221,6 +221,8 @@ function createTables($pdo, $config) {
         is_locked TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否锁定',
         created_at DATETIME NOT NULL COMMENT '发布时间',
         updated_at DATETIME DEFAULT NULL COMMENT '更新时间',
+        edit_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '编辑次数',
+        last_edit_at DATETIME DEFAULT NULL COMMENT '最后编辑时间',
         last_reply_at DATETIME DEFAULT NULL COMMENT '最后回复时间',
         last_reply_user_id INT UNSIGNED DEFAULT 0 COMMENT '最后回复用户',
         PRIMARY KEY (id),
@@ -230,7 +232,7 @@ function createTables($pdo, $config) {
         KEY idx_last_reply (last_reply_at),
         FULLTEXT KEY ft_title (title)
     ) ENGINE={$engine} DEFAULT CHARSET={$charset} COMMENT='帖子表'");
-    
+
     // 回复表
     $pdo->exec("CREATE TABLE IF NOT EXISTS {$prefix}replies (
         id INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -238,6 +240,8 @@ function createTables($pdo, $config) {
         user_id INT UNSIGNED NOT NULL COMMENT '用户ID',
         content TEXT NOT NULL COMMENT '内容',
         created_at DATETIME NOT NULL COMMENT '回复时间',
+        edit_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '编辑次数',
+        last_edit_at DATETIME DEFAULT NULL COMMENT '最后编辑时间',
         PRIMARY KEY (id),
         KEY idx_post (post_id),
         KEY idx_user (user_id),
@@ -421,7 +425,7 @@ function createTables($pdo, $config) {
     $stmt->execute(['HuBBS官网', 'https://bbs.huyourui.com', 'HuBBS开源论坛程序官方网站', 1, 1]);
     
     // 记录迁移版本（安装时已完成所有迁移）
-    $pdo->exec("INSERT INTO {$prefix}migrations (version, executed_at) VALUES (17, NOW())");
+    $pdo->exec("INSERT INTO {$prefix}migrations (version, executed_at) VALUES (18, NOW())");
     
     // 提交事务
     $pdo->commit();

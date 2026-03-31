@@ -45,6 +45,17 @@ $authorReplyCount = $db->count('replies', 'user_id = ?', [$post['user_id']]);
                             <span class="meta-label">浏览</span>
                             <span class="meta-value"><?php echo number_format($post['views']); ?></span>
                         </span>
+                        <?php if (!empty($post['edit_count']) && $post['edit_count'] > 0): ?>
+                        <span class="meta-item">
+                            <span class="meta-label">编辑</span>
+                            <span class="meta-value" title="最后编辑于 <?php echo date('Y-m-d H:i', strtotime($post['last_edit_at'])); ?>">已编辑 <?php echo $post['edit_count']; ?> 次</span>
+                        </span>
+                        <?php endif; ?>
+                        <?php if (Auth::check() && $post['user_id'] == Auth::id()): ?>
+                        <span class="meta-item">
+                            <a href="index.php?module=post&action=edit&id=<?php echo $post['id']; ?>" class="edit-link">编辑帖子</a>
+                        </span>
+                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -121,22 +132,34 @@ $authorReplyCount = $db->count('replies', 'user_id = ?', [$post['user_id']]);
                             </div>
                             <div class="author-info">
                                 <div class="author-name"><?php e($reply['username']); ?></div>
-                                <div class="author-time"><?php echo time_ago($reply['created_at']); ?></div>
+                                <div class="author-time">
+                                    <?php echo time_ago($reply['created_at']); ?>
+                                    <?php if (!empty($reply['edit_count']) && $reply['edit_count'] > 0): ?>
+                                    <span class="edit-info" title="最后编辑于 <?php echo date('Y-m-d H:i', strtotime($reply['last_edit_at'])); ?>">(已编辑 <?php echo $reply['edit_count']; ?> 次)</span>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                             <div class="reply-floor">#<?php echo $index + 1; ?></div>
                         </div>
                         <div class="reply-content">
-                            <div class="reply-body">
+                            <div class="reply-body" id="reply-body-<?php echo $reply['id']; ?>">
                                 <?php echo render_content($reply['content']); ?>
                             </div>
-                            
+
                             <?php if (Auth::check()): ?>
                             <div class="reply-actions">
-                                <button type="button" class="action-btn reply-btn" 
+                                <button type="button" class="action-btn reply-btn"
                                         onclick="showReplyForm(<?php echo $reply['id']; ?>, 0, '<?php e($reply['username']); ?>')">
                                     <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"/></svg>
                                     回复
                                 </button>
+                                <?php if ($reply['user_id'] == Auth::id()): ?>
+                                <button type="button" class="action-btn edit-reply-btn"
+                                        onclick="editReply(<?php echo $reply['id']; ?>, <?php echo $post['id']; ?>)">
+                                    <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                                    编辑
+                                </button>
+                                <?php endif; ?>
                             </div>
                             <?php endif; ?>
                             
@@ -547,6 +570,94 @@ function toggleFavorite(postId, btn) {
     });
 }
 
+// 编辑回复
+function editReply(replyId, postId) {
+    <?php if (Auth::guest()): ?>
+        window.location.href = 'index.php?module=user&action=login';
+        return;
+    <?php endif; ?>
+
+    // 获取回复内容
+    fetch('index.php?module=post&action=editReply&id=' + replyId + '&post_id=' + postId, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const replyBody = document.getElementById('reply-body-' + replyId);
+            const originalContent = data.reply.content;
+
+            // 创建编辑表单
+            const editForm = document.createElement('form');
+            editForm.className = 'edit-reply-form';
+            editForm.innerHTML = `
+                <textarea name="content" rows="4" required>${originalContent}</textarea>
+                <div class="edit-form-actions">
+                    <button type="button" class="btn-cancel" onclick="cancelEditReply(${replyId})">取消</button>
+                    <button type="submit" class="btn-submit">保存</button>
+                </div>
+                <input type="hidden" name="csrf_token" value="<?php echo csrf_token(); ?>">
+            `;
+
+            // 保存原始内容
+            replyBody.dataset.originalContent = replyBody.innerHTML;
+            replyBody.innerHTML = '';
+            replyBody.appendChild(editForm);
+
+            // 绑定提交事件
+            editForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(editForm);
+                formData.append('post_id', postId);
+
+                fetch('index.php?module=post&action=editReply&id=' + replyId, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: formData
+                })
+                .then(response => {
+                    if (response.redirected) {
+                        window.location.reload();
+                        return;
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.success) {
+                        window.location.reload();
+                    } else {
+                        showToast(data ? data.message : '编辑失败', 'error');
+                    }
+                })
+                .catch(error => {
+                    window.location.reload();
+                });
+            });
+
+            // 聚焦到文本框
+            editForm.querySelector('textarea').focus();
+        } else {
+            showToast(data.message || '获取回复内容失败', 'error');
+        }
+    })
+    .catch(error => {
+        showToast('网络错误，请稍后重试', 'error');
+    });
+}
+
+// 取消编辑回复
+function cancelEditReply(replyId) {
+    const replyBody = document.getElementById('reply-body-' + replyId);
+    if (replyBody.dataset.originalContent) {
+        replyBody.innerHTML = replyBody.dataset.originalContent;
+        delete replyBody.dataset.originalContent;
+    }
+}
+
 // Toast 提示
 function showToast(message, type = 'info') {
     // 移除已有的 toast
@@ -583,5 +694,90 @@ function showToast(message, type = 'info') {
     }, 2500);
 }
 </script>
+
+<style>
+/* 编辑信息样式 */
+.edit-info {
+    color: #999;
+    font-size: 12px;
+    margin-left: 8px;
+    cursor: help;
+}
+
+.edit-link {
+    color: #ff6b6b;
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.edit-link:hover {
+    text-decoration: underline;
+}
+
+/* 编辑回复表单样式 */
+.edit-reply-form {
+    margin: 10px 0;
+}
+
+.edit-reply-form textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.6;
+    resize: vertical;
+    min-height: 100px;
+    font-family: inherit;
+}
+
+.edit-reply-form textarea:focus {
+    outline: none;
+    border-color: #ff6b6b;
+}
+
+.edit-form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    justify-content: flex-end;
+}
+
+.edit-form-actions .btn-cancel,
+.edit-form-actions .btn-submit {
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+}
+
+.edit-form-actions .btn-cancel {
+    background: #f5f5f5;
+    color: #666;
+}
+
+.edit-form-actions .btn-cancel:hover {
+    background: #e8e8e8;
+}
+
+.edit-form-actions .btn-submit {
+    background: #ff6b6b;
+    color: #fff;
+}
+
+.edit-form-actions .btn-submit:hover {
+    background: #ff5252;
+}
+
+/* 编辑按钮样式 */
+.edit-reply-btn {
+    color: #666;
+}
+
+.edit-reply-btn:hover {
+    color: #ff6b6b;
+}
+</style>
 
 <?php include __DIR__ . '/footer.php'; ?>
