@@ -5,7 +5,7 @@
  */
 
 class Migrate {
-    private static $version = 18;
+    private static $version = 19;
     
     public static function run() {
         $db = DB::getInstance();
@@ -630,6 +630,18 @@ class Migrate {
             }
             if (!self::columnExists($db, 'replies', 'last_edit_at')) {
                 $db->query("ALTER TABLE {$db->table('replies')} ADD COLUMN last_edit_at DATETIME DEFAULT NULL COMMENT '最后编辑时间' AFTER edit_count");
+            }
+        }
+    }
+
+    /**
+     * 迁移19：添加板块指定发帖用户字段
+     */
+    private static function migrate19($db) {
+        // 为 forums 表添加允许发帖用户字段
+        if (self::tableExists($db, 'forums')) {
+            if (!self::columnExists($db, 'forums', 'allowed_users')) {
+                $db->query("ALTER TABLE {$db->table('forums')} ADD COLUMN allowed_users TEXT DEFAULT NULL COMMENT '允许发帖的用户ID，逗号分隔' AFTER sort_order");
             }
         }
     }

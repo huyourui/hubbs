@@ -94,6 +94,15 @@ class PostModule {
             redirect('index.php?module=user&action=login');
         }
 
+        // 检查用户是否被禁言
+        if (Auth::check()) {
+            $currentUser = Auth::user();
+            if ($currentUser && $currentUser['is_banned']) {
+                set_message('您已被禁言，无法发帖', 'error');
+                redirect('index.php');
+            }
+        }
+
         $db = DB::getInstance();
         $error = '';
 
@@ -155,6 +164,13 @@ class PostModule {
                     }
                     if ($selectedForum && $selectedForum['parent_id'] == 0 && isset($childForums[$forumId])) {
                         $error = '请选择二级分类';
+                    }
+
+                    // 检查用户是否有权限在该板块发帖
+                    if (empty($error) && $selectedForum) {
+                        if (!$this->canPostInForum($selectedForum)) {
+                            $error = '您没有权限在该板块发帖';
+                        }
                     }
                 }
 
@@ -884,7 +900,30 @@ class PostModule {
      * 判断是否是AJAX请求
      */
     private function isAjaxRequest() {
-        return isset($_SERVER['HTTP_X_REQUESTED_WITH']) && 
+        return isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
                strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+    }
+
+    /**
+     * 检查用户是否有权限在指定板块发帖
+     * @param array $forum 板块信息
+     * @return bool 是否有权限
+     */
+    private function canPostInForum($forum) {
+        // 如果没有设置允许发帖用户，则所有人都可以发帖
+        if (empty($forum['allowed_users'])) {
+            return true;
+        }
+
+        // 解析允许发帖的用户ID列表
+        $allowedUserIds = array_filter(array_map('trim', explode(',', $forum['allowed_users'])));
+
+        // 如果没有有效的用户ID，则所有人都可以发帖
+        if (empty($allowedUserIds)) {
+            return true;
+        }
+
+        // 检查当前用户是否在允许列表中
+        return in_array(Auth::id(), $allowedUserIds);
     }
 }

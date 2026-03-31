@@ -56,7 +56,21 @@ include __DIR__ . '/admin_header.php';
             <input type="number" name="sort_order" value="<?php echo $forum['sort_order'] ?? 0; ?>" min="0">
             <span class="form-hint">数字越小排序越靠前</span>
         </div>
-        
+
+        <?php if (!empty($isParentWithChildren)): ?>
+        <div class="form-group form-group-disabled">
+            <label>允许发帖的用户</label>
+            <input type="text" disabled placeholder="该分类有子分类，无法设置发帖权限">
+            <span class="form-hint">有二级分类的一级分类无法设置发帖权限，请设置其下的二级分类</span>
+        </div>
+        <?php else: ?>
+        <div class="form-group">
+            <label>允许发帖的用户</label>
+            <input type="text" name="allowed_users" value="<?php e($forum['allowed_users'] ?? ''); ?>" placeholder="例如：1,2,3">
+            <span class="form-hint">填写用户ID，多个ID用英文逗号分隔。留空表示所有用户都可以发帖</span>
+        </div>
+        <?php endif; ?>
+
         <div class="form-actions">
             <button type="submit" class="btn-primary"><?php echo $isEdit ? '保存' : '添加'; ?></button>
             <a href="index.php?module=admin&action=forums" class="btn-secondary">取消</a>

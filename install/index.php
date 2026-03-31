@@ -201,6 +201,7 @@ function createTables($pdo, $config) {
         icon VARCHAR(50) DEFAULT '' COMMENT '图标',
         sort_order SMALLINT UNSIGNED DEFAULT 0 COMMENT '排序',
         post_count INT UNSIGNED DEFAULT 0 COMMENT '帖子数',
+        allowed_users TEXT DEFAULT NULL COMMENT '允许发帖的用户ID，逗号分隔',
         PRIMARY KEY (id),
         KEY idx_sort (sort_order)
     ) ENGINE={$engine} DEFAULT CHARSET={$charset} COMMENT='板块表'");
@@ -425,7 +426,7 @@ function createTables($pdo, $config) {
     $stmt->execute(['HuBBS官网', 'https://bbs.huyourui.com', 'HuBBS开源论坛程序官方网站', 1, 1]);
     
     // 记录迁移版本（安装时已完成所有迁移）
-    $pdo->exec("INSERT INTO {$prefix}migrations (version, executed_at) VALUES (18, NOW())");
+    $pdo->exec("INSERT INTO {$prefix}migrations (version, executed_at) VALUES (19, NOW())");
     
     // 提交事务
     $pdo->commit();

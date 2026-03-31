@@ -627,22 +627,29 @@ class AdminModule {
         $db = DB::getInstance();
         $forumId = intval($_GET['id'] ?? 0);
         $error = '';
-        
+
         if ($forumId <= 0) {
             set_message('参数错误', 'error');
             redirect('index.php?module=admin&action=forums');
         }
-        
+
         $forum = $db->fetch(
             "SELECT * FROM {$db->table('forums')} WHERE id = ? LIMIT 1",
             [$forumId]
         );
-        
+
         if (!$forum) {
             set_message('分类不存在', 'error');
             redirect('index.php?module=admin&action=forums');
         }
-        
+
+        // 检查是否是一级分类且有子分类
+        $hasChildren = $db->fetch(
+            "SELECT COUNT(*) as count FROM {$db->table('forums')} WHERE parent_id = ?",
+            [$forumId]
+        );
+        $isParentWithChildren = ($forum['parent_id'] == 0 && $hasChildren['count'] > 0);
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!verify_csrf($_POST['csrf_token'] ?? '')) {
                 $error = '安全验证失败';
@@ -652,7 +659,8 @@ class AdminModule {
                 $parentId = intval($_POST['parent_id'] ?? 0);
                 $icon = trim($_POST['icon'] ?? '');
                 $sortOrder = intval($_POST['sort_order'] ?? 0);
-                
+                $allowedUsers = trim($_POST['allowed_users'] ?? '');
+
                 // 检查是否将自己设为子分类（避免循环）
                 if ($parentId == $forumId) {
                     $error = '不能将自己设为父分类';
@@ -663,39 +671,58 @@ class AdminModule {
                         $error = '不能将子分类设为父分类';
                     }
                 }
-                
+
+                // 验证允许发帖用户ID格式
+                if (!empty($allowedUsers)) {
+                    $userIds = array_filter(array_map('trim', explode(',', $allowedUsers)));
+                    foreach ($userIds as $uid) {
+                        if (!is_numeric($uid) || intval($uid) <= 0) {
+                            $error = '允许发帖用户ID格式错误，请填写数字ID，多个ID用英文逗号分隔';
+                            break;
+                        }
+                    }
+                }
+
                 if (empty($error)) {
                     if (empty($name)) {
                         $error = '分类名称不能为空';
                     } else {
-                        $db->update('forums', [
+                        $updateData = [
                             'parent_id' => $parentId,
                             'name' => $name,
                             'description' => $description,
                             'icon' => $icon,
                             'sort_order' => $sortOrder
-                        ], 'id = ?', [$forumId]);
-                        
+                        ];
+
+                        // 只有二级分类或没有子分类的一级分类才能设置允许发帖用户
+                        if (!$isParentWithChildren) {
+                            $updateData['allowed_users'] = $allowedUsers ?: null;
+                        }
+
+                        $db->update('forums', $updateData, 'id = ?', [$forumId]);
+
                         set_message('分类更新成功');
                         redirect('index.php?module=admin&action=forums');
                     }
                 }
             }
         }
-        
+
         // 获取一级分类作为父分类选项（排除自己）
         $parentForums = $db->fetchAll(
             "SELECT id, name FROM {$db->table('forums')} WHERE parent_id = 0 AND id != ? ORDER BY sort_order ASC",
             [$forumId]
         );
-        
+
         return [
             'template' => 'admin_forum_edit',
             'data' => [
                 'forum' => $forum,
                 'parentForums' => $parentForums,
                 'error' => $error,
-                'isEdit' => true
+                'isEdit' => true,
+                'isParentWithChildren' => $isParentWithChildren
             ]
         ];
     }
