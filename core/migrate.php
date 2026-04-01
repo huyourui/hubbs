@@ -5,7 +5,7 @@
  */
 
 class Migrate {
-    private static $version = 19;
+    private static $version = 20;
     
     public static function run() {
         $db = DB::getInstance();
@@ -642,6 +642,18 @@ class Migrate {
         if (self::tableExists($db, 'forums')) {
             if (!self::columnExists($db, 'forums', 'allowed_users')) {
                 $db->query("ALTER TABLE {$db->table('forums')} ADD COLUMN allowed_users TEXT DEFAULT NULL COMMENT '允许发帖的用户ID，逗号分隔' AFTER sort_order");
+            }
+        }
+    }
+
+    /**
+     * 迁移20：添加用户个人介绍字段
+     */
+    private static function migrate20($db) {
+        // 为 users 表添加个人介绍字段
+        if (self::tableExists($db, 'users')) {
+            if (!self::columnExists($db, 'users', 'bio')) {
+                $db->query("ALTER TABLE {$db->table('users')} ADD COLUMN bio TEXT DEFAULT NULL COMMENT '个人介绍' AFTER avatar");
             }
         }
     }

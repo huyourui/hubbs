@@ -168,6 +168,7 @@ function createTables($pdo, $config) {
         original_email VARCHAR(100) DEFAULT NULL COMMENT '注销前的原始邮箱',
         password VARCHAR(255) NOT NULL COMMENT '密码',
         avatar VARCHAR(255) DEFAULT '' COMMENT '头像',
+        bio TEXT DEFAULT NULL COMMENT '个人介绍',
         is_admin TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否管理员',
         status TINYINT(1) NOT NULL DEFAULT 1 COMMENT '用户状态：0-封禁，1-正常',
         unread_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '未读消息数',
@@ -426,7 +427,7 @@ function createTables($pdo, $config) {
     $stmt->execute(['HuBBS官网', 'https://bbs.huyourui.com', 'HuBBS开源论坛程序官方网站', 1, 1]);
     
     // 记录迁移版本（安装时已完成所有迁移）
-    $pdo->exec("INSERT INTO {$prefix}migrations (version, executed_at) VALUES (19, NOW())");
+    $pdo->exec("INSERT INTO {$prefix}migrations (version, executed_at) VALUES (20, NOW())");
     
     // 提交事务
     $pdo->commit();

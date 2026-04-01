@@ -825,6 +825,7 @@ class AdminModule {
                     'upload_attachment_exts' => trim($_POST['upload_attachment_exts'] ?? 'pdf,doc,docx,xls,xlsx,ppt,pptx,zip,rar,txt,md'),
                     'upload_attachment_max_size' => intval(($_POST['upload_attachment_max_size_mb'] ?? 10) * 1048576),
                     'upload_attachment_max_count' => trim($_POST['upload_attachment_max_count'] ?? '5'),
+                    'avatar_max_size' => intval(($_POST['avatar_max_size_mb'] ?? 2) * 1048576),
                 ];
                 
                 Settings::setMultiple($data);

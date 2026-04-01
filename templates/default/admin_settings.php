@@ -206,6 +206,16 @@ include __DIR__ . '/admin_header.php';
             </div>
         </div>
 
+        <div class="settings-section">
+            <h3>头像设置</h3>
+
+            <div class="form-group">
+                <label>头像最大大小（MB）</label>
+                <input type="number" name="avatar_max_size_mb" value="<?php echo intval(($settings['avatar_max_size'] ?? 2097152) / 1048576); ?>" min="1" max="10">
+                <span class="form-hint">默认2MB，最大10MB。上传后会自动压缩到宽度300px</span>
+            </div>
+        </div>
+
         <div class="form-actions">
             <button type="submit" class="btn-primary">保存设置</button>
         </div>

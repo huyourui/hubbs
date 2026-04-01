@@ -54,6 +54,7 @@
                     <a href="index.php?module=admin" class="nav-link" style="color: #ff6b6b;">后台</a>
                     <?php endif; ?>
                     <a href="index.php?module=user&action=profile" class="nav-link">个人中心</a>
+                    <a href="index.php?module=user&action=settings" class="nav-link">账号设置</a>
                     <a href="index.php?module=user&action=logout" class="nav-link">退出</a>
                 <?php else: ?>
                     <a href="index.php?module=user&action=login" class="nav-link">登录</a>

@@ -22,6 +22,10 @@ class UserModule {
                 return $this->logout();
             case 'profile':
                 return $this->profile();
+            case 'settings':
+                return $this->settings();
+            case 'upload_avatar':
+                return $this->uploadAvatar();
             case 'check_email':
                 return $this->checkEmail();
             default:
@@ -433,6 +437,259 @@ class UserModule {
                 'isOwnProfile' => $isOwnProfile
             ]
         ];
+    }
+
+    /**
+     * 用户设置页面
+     */
+    private function settings() {
+        if (Auth::guest()) {
+            redirect('index.php?module=user&action=login');
+        }
+
+        $db = DB::getInstance();
+        $user = Auth::user();
+        $error = '';
+        $success = '';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!verify_csrf($_POST['csrf_token'] ?? '')) {
+                $error = '安全验证失败';
+            } else {
+                $formType = $_POST['form_type'] ?? '';
+
+                switch ($formType) {
+                    case 'profile':
+                        // 修改用户名和个人介绍
+                        $username = trim($_POST['username'] ?? '');
+                        $bio = trim($_POST['bio'] ?? '');
+
+                        if (empty($username)) {
+                            $error = '用户名不能为空';
+                        } elseif (!validate_username($username)) {
+                            $error = '用户名2-20位，支持中英文、数字、下划线';
+                        } else {
+                            // 检查用户名是否已被其他用户使用
+                            $existing = $db->fetch(
+                                "SELECT id FROM {$db->table('users')} WHERE username = ? AND id != ? LIMIT 1",
+                                [$username, $user['id']]
+                            );
+                            if ($existing) {
+                                $error = '该用户名已被使用';
+                            } else {
+                                $db->update('users', [
+                                    'username' => $username,
+                                    'bio' => $bio
+                                ], 'id = ?', [$user['id']]);
+                                $success = '个人资料已更新';
+                            }
+                        }
+                        break;
+
+                    case 'password':
+                        // 修改密码
+                        $currentPassword = $_POST['current_password'] ?? '';
+                        $newPassword = $_POST['new_password'] ?? '';
+                        $confirmPassword = $_POST['confirm_password'] ?? '';
+
+                        if (empty($currentPassword)) {
+                            $error = '请输入当前密码';
+                        } elseif (strlen($newPassword) < 6) {
+                            $error = '新密码至少6位';
+                        } elseif ($newPassword !== $confirmPassword) {
+                            $error = '两次输入的新密码不一致';
+                        } else {
+                            // 验证当前密码
+                            $currentUser = $db->fetch(
+                                "SELECT password, salt FROM {$db->table('users')} WHERE id = ? LIMIT 1",
+                                [$user['id']]
+                            );
+                            $hashedPassword = password_hash($currentPassword . $currentUser['salt'], PASSWORD_BCRYPT);
+                            if (!password_verify($currentPassword . $currentUser['salt'], $currentUser['password'])) {
+                                $error = '当前密码错误';
+                            } else {
+                                // 生成新密码
+                                $newSalt = bin2hex(random_bytes(16));
+                                $newHashedPassword = password_hash($newPassword . $newSalt, PASSWORD_BCRYPT);
+                                $db->update('users', [
+                                    'password' => $newHashedPassword,
+                                    'salt' => $newSalt
+                                ], 'id = ?', [$user['id']]);
+                                $success = '密码已修改';
+                            }
+                        }
+                        break;
+                }
+            }
+        }
+
+        // 重新获取用户信息（可能有更新）
+        $user = $db->fetch("SELECT * FROM {$db->table('users')} WHERE id = ? LIMIT 1", [$user['id']]);
+
+        return [
+            'template' => 'user_settings',
+            'data' => [
+                'user' => $user,
+                'error' => $error,
+                'success' => $success
+            ]
+        ];
+    }
+
+    /**
+     * 上传头像
+     */
+    private function uploadAvatar() {
+        if (Auth::guest()) {
+            echo json_encode(['success' => false, 'message' => '请先登录']);
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => '请求方式错误']);
+            exit;
+        }
+
+        if (!verify_csrf($_POST['csrf_token'] ?? '')) {
+            echo json_encode(['success' => false, 'message' => '安全验证失败']);
+            exit;
+        }
+
+        if (!isset($_FILES['avatar']) || $_FILES['avatar']['error'] === UPLOAD_ERR_NO_FILE) {
+            echo json_encode(['success' => false, 'message' => '请选择图片']);
+            exit;
+        }
+
+        $file = $_FILES['avatar'];
+
+        // 检查上传错误
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            echo json_encode(['success' => false, 'message' => '上传失败：' . $file['error']]);
+            exit;
+        }
+
+        // 获取设置
+        $maxSize = intval(Settings::get('avatar_max_size', 2097152)); // 默认2MB
+        $allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+
+        // 检查文件大小
+        if ($file['size'] > $maxSize) {
+            $maxSizeMB = round($maxSize / 1048576, 2);
+            echo json_encode(['success' => false, 'message' => "图片大小超过限制，最大允许 {$maxSizeMB}MB"]);
+            exit;
+        }
+
+        // 检查文件后缀
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, $allowedExts)) {
+            echo json_encode(['success' => false, 'message' => '不支持的图片格式，允许：jpg, jpeg, png, gif, webp']);
+            exit;
+        }
+
+        // 验证图片真实性
+        $imageInfo = getimagesize($file['tmp_name']);
+        if (!$imageInfo) {
+            echo json_encode(['success' => false, 'message' => '上传的文件不是有效的图片']);
+            exit;
+        }
+
+        // 创建上传目录
+        $uploadDir = ROOT_DIR . '/uploads/avatars';
+        if (!is_dir($uploadDir)) {
+            if (!@mkdir($uploadDir, 0755, true)) {
+                echo json_encode(['success' => false, 'message' => '创建上传目录失败']);
+                exit;
+            }
+        }
+
+        // 生成唯一文件名
+        $userId = Auth::id();
+        $newFileName = 'avatar_' . $userId . '_' . time() . '.jpg';
+        $filePath = $uploadDir . '/' . $newFileName;
+
+        // 压缩图片到最大宽度300px
+        $maxWidth = 300;
+        $sourceImage = null;
+
+        switch ($imageInfo[2]) {
+            case IMAGETYPE_JPEG:
+                $sourceImage = imagecreatefromjpeg($file['tmp_name']);
+                break;
+            case IMAGETYPE_PNG:
+                $sourceImage = imagecreatefrompng($file['tmp_name']);
+                break;
+            case IMAGETYPE_GIF:
+                $sourceImage = imagecreatefromgif($file['tmp_name']);
+                break;
+            case IMAGETYPE_WEBP:
+                $sourceImage = imagecreatefromwebp($file['tmp_name']);
+                break;
+        }
+
+        if (!$sourceImage) {
+            echo json_encode(['success' => false, 'message' => '无法处理该图片格式']);
+            exit;
+        }
+
+        // 获取原始尺寸
+        $origWidth = imagesx($sourceImage);
+        $origHeight = imagesy($sourceImage);
+
+        // 计算新尺寸（等比例压缩）
+        if ($origWidth > $maxWidth) {
+            $newWidth = $maxWidth;
+            $newHeight = intval($origHeight * ($maxWidth / $origWidth));
+        } else {
+            $newWidth = $origWidth;
+            $newHeight = $origHeight;
+        }
+
+        // 创建新图片
+        $newImage = imagecreatetruecolor($newWidth, $newHeight);
+
+        // 处理透明背景（PNG）
+        if ($imageInfo[2] == IMAGETYPE_PNG) {
+            imagealphablending($newImage, false);
+            imagesavealpha($newImage, true);
+            $transparent = imagecolorallocatealpha($newImage, 255, 255, 255, 127);
+            imagefilledrectangle($newImage, 0, 0, $newWidth, $newHeight, $transparent);
+        }
+
+        // 缩放图片
+        imagecopyresampled($newImage, $sourceImage, 0, 0, 0, 0, $newWidth, $newHeight, $origWidth, $origHeight);
+
+        // 保存为JPEG
+        $result = imagejpeg($newImage, $filePath, 90);
+
+        // 释放资源
+        imagedestroy($sourceImage);
+        imagedestroy($newImage);
+
+        if (!$result) {
+            echo json_encode(['success' => false, 'message' => '图片保存失败']);
+            exit;
+        }
+
+        // 删除旧头像
+        $db = DB::getInstance();
+        $oldAvatar = $db->fetch("SELECT avatar FROM {$db->table('users')} WHERE id = ? LIMIT 1", [$userId]);
+        if ($oldAvatar && !empty($oldAvatar['avatar'])) {
+            $oldPath = ROOT_DIR . '/' . $oldAvatar['avatar'];
+            if (file_exists($oldPath) && strpos($oldAvatar['avatar'], 'uploads/avatars/') === 0) {
+                @unlink($oldPath);
+            }
+        }
+
+        // 更新数据库
+        $relativePath = 'uploads/avatars/' . $newFileName;
+        $db->update('users', ['avatar' => $relativePath], 'id = ?', [$userId]);
+
+        echo json_encode([
+            'success' => true,
+            'message' => '头像上传成功',
+            'avatar_url' => $relativePath
+        ]);
+        exit;
     }
 
     /**
