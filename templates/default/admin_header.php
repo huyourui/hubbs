@@ -29,6 +29,7 @@
                 <a href="index.php?module=admin&action=links" class="nav-link<?php echo $action === 'links' ? ' active' : ''; ?>">友链</a>
                 <a href="index.php?module=admin&action=mail" class="nav-link<?php echo $action === 'mail' ? ' active' : ''; ?>">邮件</a>
                 <a href="index.php?module=admin&action=settings" class="nav-link<?php echo $action === 'settings' ? ' active' : ''; ?>">设置</a>
+                <a href="index.php?module=admin&action=update" class="nav-link<?php echo $action === 'update' ? ' active' : ''; ?>">更新<?php echo isset($hasUpdate) && $hasUpdate ? ' <span class="update-dot">●</span>' : ''; ?></a>
             </nav>
             <div class="admin-user">
                 <span><?php e(Auth::user()['username']); ?></span>

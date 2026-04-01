@@ -122,6 +122,20 @@ include __DIR__ . '/admin_header.php';
                     <span class="info-label">当前版本</span>
                     <span class="info-value version-badge"><?php e($appInfo['version']); ?></span>
                 </div>
+                <?php if ($hasUpdate): ?>
+                <div class="info-row update-available">
+                    <span class="info-label">最新版本</span>
+                    <span class="info-value">
+                        <span class="version-badge new"><?php e($remoteVersion); ?></span>
+                        <a href="index.php?module=admin&action=update" class="update-link">立即更新 →</a>
+                    </span>
+                </div>
+                <?php else: ?>
+                <div class="info-row">
+                    <span class="info-label">最新版本</span>
+                    <span class="info-value version-badge latest">已是最新</span>
+                </div>
+                <?php endif; ?>
                 <div class="info-row">
                     <span class="info-label">发布日期</span>
                     <span class="info-value"><?php e($appInfo['release_date']); ?></span>
@@ -226,6 +240,35 @@ include __DIR__ . '/admin_header.php';
 
 .info-link:hover {
     color: #ff6b6b;
+}
+
+/* 更新相关样式 */
+.update-available {
+    background: #fff2f0;
+    margin: 0 -10px;
+    padding: 8px 10px !important;
+    border-radius: 6px;
+}
+
+.version-badge.new {
+    background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+    margin-right: 10px;
+}
+
+.version-badge.latest {
+    background: #f0f0f0;
+    color: #666;
+}
+
+.update-link {
+    color: #ff6b6b;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 12px;
+}
+
+.update-link:hover {
+    text-decoration: underline;
 }
 
 @media (max-width: 768px) {

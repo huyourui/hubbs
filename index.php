@@ -20,6 +20,7 @@ require_once HUBBS_ROOT . 'core/migrate.php';
 require_once HUBBS_ROOT . 'core/Settings.php';
 require_once HUBBS_ROOT . 'core/notification.php';
 require_once HUBBS_ROOT . 'core/Upload.php';
+require_once HUBBS_ROOT . 'core/Updater.php';
 
 // 执行数据库迁移（无感）
 Migrate::run();
