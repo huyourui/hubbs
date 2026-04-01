@@ -48,7 +48,7 @@ $authorReplyCount = $db->count('replies', 'user_id = ?', [$post['user_id']]);
                         <?php if (!empty($post['edit_count']) && $post['edit_count'] > 0): ?>
                         <span class="meta-item">
                             <span class="meta-label">编辑</span>
-                            <span class="meta-value" title="最后编辑于 <?php echo date('Y-m-d H:i', strtotime($post['last_edit_at'])); ?>">已编辑 <?php echo $post['edit_count']; ?> 次</span>
+                            <span class="meta-value" title="已编辑 <?php echo $post['edit_count']; ?> 次">最后编辑于 <?php echo time_ago($post['last_edit_at']); ?></span>
                         </span>
                         <?php endif; ?>
                         <?php if (Auth::check() && $post['user_id'] == Auth::id()): ?>
@@ -135,7 +135,7 @@ $authorReplyCount = $db->count('replies', 'user_id = ?', [$post['user_id']]);
                                 <div class="author-time">
                                     <?php echo time_ago($reply['created_at']); ?>
                                     <?php if (!empty($reply['edit_count']) && $reply['edit_count'] > 0): ?>
-                                    <span class="edit-info" title="最后编辑于 <?php echo date('Y-m-d H:i', strtotime($reply['last_edit_at'])); ?>">(已编辑 <?php echo $reply['edit_count']; ?> 次)</span>
+                                    <span class="edit-info" title="已编辑 <?php echo $reply['edit_count']; ?> 次">(最后编辑于 <?php echo time_ago($reply['last_edit_at']); ?>)</span>
                                     <?php endif; ?>
                                 </div>
                             </div>
