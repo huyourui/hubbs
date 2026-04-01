@@ -139,16 +139,6 @@ include __DIR__ . '/header.php';
 
     <!-- 右侧：网站信息 -->
     <aside class="sidebar-right">
-        <!-- 网站说明 -->
-        <div class="card">
-            <div class="card-header">
-                <h3>网站说明</h3>
-            </div>
-            <div class="card-body">
-                <p class="site-desc">HuBBS 是一款轻量级开源论坛程序，基于 PHP 7.4+ 和 MySQL 5.7+ 开发，采用亿级数据架构设计，代码简洁高效。</p>
-            </div>
-        </div>
-
         <!-- 站点统计 -->
         <div class="card">
             <div class="card-header">
