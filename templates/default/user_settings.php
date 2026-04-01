@@ -16,10 +16,6 @@ $avatarMaxSizeMB = round($avatarMaxSize / 1048576, 2);
                 <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                 个人资料
             </a>
-            <a href="#avatar" class="menu-item" data-tab="avatar">
-                <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
-                头像设置
-            </a>
             <a href="#password" class="menu-item" data-tab="password">
                 <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
                 修改密码
@@ -41,6 +37,31 @@ $avatarMaxSizeMB = round($avatarMaxSize / 1048576, 2);
             <form method="post" class="settings-form">
                 <?php csrf_field(); ?>
                 <input type="hidden" name="form_type" value="profile">
+
+                <!-- 头像设置 -->
+                <div class="form-group avatar-form-group">
+                    <label>头像</label>
+                    <div class="avatar-upload-wrapper">
+                        <div class="current-avatar">
+                            <img src="<?php echo get_avatar_url($user['avatar']); ?>" alt="当前头像" id="avatar-preview">
+                        </div>
+                        <div class="avatar-upload-info">
+                            <p>支持 jpg、jpeg、png、gif、webp 格式</p>
+                            <p>文件大小不超过 <?php echo $avatarMaxSizeMB; ?>MB</p>
+                            <p>上传后会自动压缩到宽度 300px</p>
+                            <div class="upload-actions">
+                                <input type="file" id="avatar-input" accept="image/*" style="display: none;">
+                                <button type="button" class="btn-secondary" onclick="document.getElementById('avatar-input').click()">更换头像</button>
+                            </div>
+                            <div class="upload-progress" id="upload-progress" style="display: none;">
+                                <div class="progress-bar">
+                                    <div class="progress-fill"></div>
+                                </div>
+                                <span class="progress-text">上传中...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="form-group">
                     <label>用户名 <span class="required">*</span></label>
@@ -64,31 +85,6 @@ $avatarMaxSizeMB = round($avatarMaxSize / 1048576, 2);
                     <button type="submit" class="btn-primary">保存修改</button>
                 </div>
             </form>
-        </div>
-
-        <!-- 头像设置 -->
-        <div class="settings-section" id="avatar-section" style="display: none;">
-            <h2 class="section-title">头像设置</h2>
-            <div class="avatar-upload-area">
-                <div class="current-avatar">
-                    <img src="<?php echo get_avatar_url($user['avatar']); ?>" alt="当前头像" id="avatar-preview">
-                </div>
-                <div class="upload-info">
-                    <p>支持 jpg、jpeg、png、gif、webp 格式</p>
-                    <p>文件大小不超过 <?php echo $avatarMaxSizeMB; ?>MB</p>
-                    <p>上传后会自动压缩到宽度 300px</p>
-                </div>
-                <div class="upload-actions">
-                    <input type="file" id="avatar-input" accept="image/*" style="display: none;">
-                    <button type="button" class="btn-primary" onclick="document.getElementById('avatar-input').click()">选择图片</button>
-                </div>
-                <div class="upload-progress" id="upload-progress" style="display: none;">
-                    <div class="progress-bar">
-                        <div class="progress-fill"></div>
-                    </div>
-                    <span class="progress-text">上传中...</span>
-                </div>
-            </div>
         </div>
 
         <!-- 修改密码 -->
@@ -250,37 +246,62 @@ $avatarMaxSizeMB = round($avatarMaxSize / 1048576, 2);
     background: #ff5252;
 }
 
-/* 头像上传 */
-.avatar-upload-area {
-    text-align: center;
-    padding: 40px;
-    border: 2px dashed #ddd;
-    border-radius: 8px;
-    background: #fafafa;
-}
-
-.current-avatar {
+/* 头像上传（整合到个人资料） */
+.avatar-form-group {
     margin-bottom: 20px;
 }
 
+.avatar-upload-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+.current-avatar {
+    flex-shrink: 0;
+}
+
 .current-avatar img {
-    width: 120px;
-    height: 120px;
+    width: 100px;
+    height: 100px;
     border-radius: 50%;
     object-fit: cover;
     border: 3px solid #fff;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-.upload-info {
-    margin-bottom: 20px;
+.avatar-upload-info {
+    flex: 1;
     color: #666;
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1.8;
 }
 
+.avatar-upload-info p {
+    margin: 4px 0;
+}
+
+.upload-actions {
+    margin-top: 10px;
+}
+
+.btn-secondary {
+    background: #f5f5f5;
+    color: #666;
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-secondary:hover {
+    background: #e8e8e8;
+}
+
 .upload-progress {
-    margin-top: 20px;
+    margin-top: 10px;
 }
 
 .progress-bar {
@@ -338,7 +359,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const menuItems = document.querySelectorAll('.menu-item');
     const sections = {
         'profile': document.getElementById('profile-section'),
-        'avatar': document.getElementById('avatar-section'),
         'password': document.getElementById('password-section')
     };
 
