@@ -29,6 +29,8 @@ class AdminModule {
                 return $this->mail();
             case 'links':
                 return $this->links();
+            case 'update':
+                return $this->update();
             default:
                 return $this->dashboard();
         }
@@ -68,12 +70,27 @@ class AdminModule {
             'release_date' => '2024-01-01',
         ];
 
+        // 检查更新
+        $hasUpdate = false;
+        $remoteVersion = null;
+        try {
+            require_once HUBBS_ROOT . 'core/Updater.php';
+            $updater = new Updater();
+            $checkResult = $updater->checkUpdate();
+            $hasUpdate = $checkResult['has_update'];
+            $remoteVersion = $checkResult['remote_version'];
+        } catch (Exception $e) {
+            // 忽略更新检查错误
+        }
+
         return [
             'template' => 'admin_dashboard',
             'data' => [
                 'stats' => $stats,
                 'serverInfo' => $serverInfo,
                 'appInfo' => $appInfo,
+                'hasUpdate' => $hasUpdate,
+                'remoteVersion' => $remoteVersion,
             ]
         ];
     }
@@ -1142,5 +1159,98 @@ class AdminModule {
         }
         
         redirect('index.php?module=admin&action=links');
+    }
+    
+    /**
+     * 系统更新
+     */
+    private function update() {
+        require_once HUBBS_ROOT . 'core/Updater.php';
+        
+        $updater = new Updater();
+        $error = '';
+        $success = '';
+        
+        // 处理更新操作
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!verify_csrf($_POST['csrf_token'] ?? '')) {
+                $error = '安全验证失败';
+            } else {
+                $action = $_POST['action'] ?? '';
+                
+                switch ($action) {
+                    case 'update':
+                        // 检查更新
+                        $checkResult = $updater->checkUpdate();
+                        if (!$checkResult['has_update']) {
+                            $error = '当前已是最新版本';
+                            break;
+                        }
+                        
+                        $remoteVersion = $checkResult['remote_version'];
+                        
+                        // 1. 创建备份
+                        $backupResult = $updater->createBackup();
+                        if (!$backupResult['success']) {
+                            $error = '创建备份失败: ' . $backupResult['error'];
+                            break;
+                        }
+                        
+                        // 2. 下载更新包
+                        $downloadResult = $updater->downloadUpdate($remoteVersion);
+                        if (!$downloadResult['success']) {
+                            $error = '下载更新包失败: ' . $downloadResult['error'];
+                            break;
+                        }
+                        
+                        // 3. 执行更新
+                        $applyResult = $updater->applyUpdate($downloadResult['file']);
+                        if (!$applyResult['success']) {
+                            $error = '更新失败: ' . $applyResult['message'];
+                            break;
+                        }
+                        
+                        // 4. 清理旧备份
+                        $updater->cleanupOldBackups();
+                        
+                        $success = '系统已更新到 v' . $remoteVersion . '，请刷新页面查看最新版本';
+                        break;
+                        
+                    case 'rollback':
+                        $backupName = $_POST['backup'] ?? '';
+                        if (empty($backupName)) {
+                            $error = '请选择要回滚的备份';
+                            break;
+                        }
+                        
+                        $rollbackResult = $updater->rollback($backupName);
+                        if ($rollbackResult['success']) {
+                            $success = '系统已回滚到备份版本，请刷新页面';
+                        } else {
+                            $error = '回滚失败: ' . $rollbackResult['message'];
+                        }
+                        break;
+                }
+            }
+        }
+        
+        // 获取更新信息
+        $checkResult = $updater->checkUpdate();
+        $writable = $updater->checkWritable();
+        $backups = $updater->getBackups();
+        
+        return [
+            'template' => 'admin_update',
+            'data' => [
+                'hasUpdate' => $checkResult['has_update'],
+                'localVersion' => $checkResult['local_version'],
+                'remoteVersion' => $checkResult['remote_version'],
+                'releaseInfo' => $checkResult['release_info'],
+                'writable' => $writable,
+                'backups' => $backups,
+                'error' => $error,
+                'success' => $success,
+            ]
+        ];
     }
 }
