@@ -428,6 +428,19 @@ function render_default_avatar($userId, $username, $size = 'normal', $class = ''
     echo '</svg>';
 }
 
+/**
+ * 获取用户头像URL
+ * @param string|null $avatar 头像路径
+ * @return string 头像URL
+ */
+function get_avatar_url($avatar) {
+    if (!empty($avatar) && file_exists(ROOT_DIR . '/' . $avatar)) {
+        return $avatar;
+    }
+    // 返回默认头像占位符
+    return 'data:image/svg+xml,' . urlencode('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#ddd"/><text x="50" y="65" text-anchor="middle" fill="#999" font-size="40">?</text></svg>');
+}
+
 // 获取用户信息（支持已删除用户）
 function get_user_info($userId) {
     static $cache = [];
