@@ -418,7 +418,8 @@ function render_default_avatar($userId, $username, $size = 'normal', $class = ''
         'small' => 32,
         'normal' => 40,
         'large' => 48,
-        'xlarge' => 80
+        'xlarge' => 80,
+        'xxlarge' => 100
     ];
     $sizePx = isset($sizeMap[$size]) ? $sizeMap[$size] : 40;
 
@@ -431,14 +432,18 @@ function render_default_avatar($userId, $username, $size = 'normal', $class = ''
 /**
  * 获取用户头像URL
  * @param string|null $avatar 头像路径
+ * @param int $userId 用户ID（用于生成默认头像颜色）
+ * @param string $username 用户名（用于生成首字符头像）
  * @return string 头像URL
  */
-function get_avatar_url($avatar) {
+function get_avatar_url($avatar, $userId = 0, $username = '') {
     if (!empty($avatar) && file_exists(ROOT_DIR . '/' . $avatar)) {
         return $avatar;
     }
-    // 返回默认头像占位符
-    return 'data:image/svg+xml,' . urlencode('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#ddd"/><text x="50" y="65" text-anchor="middle" fill="#999" font-size="40">?</text></svg>');
+    // 生成首字符头像
+    $color = get_user_avatar_color($userId);
+    $initial = $username ? mb_substr($username, 0, 1, 'UTF-8') : '?';
+    return 'data:image/svg+xml,' . urlencode('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="' . $color . '"/><text x="50" y="68" text-anchor="middle" fill="#fff" font-size="45" font-weight="500">' . $initial . '</text></svg>');
 }
 
 // 获取用户信息（支持已删除用户）

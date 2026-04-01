@@ -9,6 +9,8 @@ if (!defined('HUBBS_ROOT')) {
     define('HUBBS_ROOT', dirname(__DIR__) . '/');
 }
 
+define('ROOT_DIR', dirname(__DIR__));
+
 // 版本信息
 define('HUBBS_VERSION', '1.3.0');
 define('HUBBS_NAME', 'HuBBS');

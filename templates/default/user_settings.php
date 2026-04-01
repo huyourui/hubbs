@@ -42,8 +42,12 @@ $avatarMaxSizeMB = round($avatarMaxSize / 1048576, 2);
                 <div class="form-group avatar-form-group">
                     <label>头像</label>
                     <div class="avatar-upload-wrapper">
-                        <div class="current-avatar">
-                            <img src="<?php echo get_avatar_url($user['avatar']); ?>" alt="当前头像" id="avatar-preview">
+                        <div class="current-avatar" id="avatar-container">
+                            <?php if ($user['avatar']): ?>
+                            <img src="<?php e($user['avatar']); ?>" alt="当前头像" id="avatar-preview">
+                            <?php else: ?>
+                            <?php echo render_default_avatar($user['id'], $user['username'], 'xxlarge', 'avatar-default-preview'); ?>
+                            <?php endif; ?>
                         </div>
                         <div class="avatar-upload-info">
                             <p>支持 jpg、jpeg、png、gif、webp 格式</p>
@@ -261,7 +265,8 @@ $avatarMaxSizeMB = round($avatarMaxSize / 1048576, 2);
     flex-shrink: 0;
 }
 
-.current-avatar img {
+.current-avatar img,
+.current-avatar svg.avatar-default-preview {
     width: 100px;
     height: 100px;
     border-radius: 50%;
@@ -380,18 +385,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 头像上传
     const avatarInput = document.getElementById('avatar-input');
-    const avatarPreview = document.getElementById('avatar-preview');
+    const avatarContainer = document.getElementById('avatar-container');
     const uploadProgress = document.getElementById('upload-progress');
     const progressFill = uploadProgress.querySelector('.progress-fill');
+    const defaultAvatarSvg = `<?php echo $user['avatar'] ? '' : trim(preg_replace('/\s+/', ' ', render_default_avatar($user['id'], $user['username'], 'xxlarge', 'avatar-default-preview'))); ?>`;
 
     avatarInput.addEventListener('change', function() {
         const file = this.files[0];
         if (!file) return;
 
-        // 显示预览
+        // 显示预览 - 如果是 SVG 默认头像，替换为 img
         const reader = new FileReader();
         reader.onload = function(e) {
-            avatarPreview.src = e.target.result;
+            let avatarPreview = document.getElementById('avatar-preview');
+            if (!avatarPreview) {
+                // 移除 SVG，创建 img
+                avatarContainer.innerHTML = '<img src="' + e.target.result + '" alt="当前头像" id="avatar-preview">';
+            } else {
+                avatarPreview.src = e.target.result;
+            }
         };
         reader.readAsDataURL(file);
 
@@ -413,7 +425,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (data.success) {
                 setTimeout(() => {
-                    alert('头像上传成功');
                     uploadProgress.style.display = 'none';
                     progressFill.style.width = '0%';
                     // 更新页面上的所有头像
@@ -426,14 +437,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 uploadProgress.style.display = 'none';
                 progressFill.style.width = '0%';
                 // 恢复原头像
-                avatarPreview.src = '<?php echo get_avatar_url($user['avatar']); ?>';
+                <?php if ($user['avatar']): ?>
+                document.getElementById('avatar-preview').src = '<?php e($user['avatar']); ?>';
+                <?php else: ?>
+                avatarContainer.innerHTML = defaultAvatarSvg;
+                <?php endif; ?>
             }
         })
         .catch(error => {
             alert('上传失败，请重试');
             uploadProgress.style.display = 'none';
             progressFill.style.width = '0%';
-            avatarPreview.src = '<?php echo get_avatar_url($user['avatar']); ?>';
+            // 恢复原头像
+            <?php if ($user['avatar']): ?>
+            document.getElementById('avatar-preview').src = '<?php e($user['avatar']); ?>';
+            <?php else: ?>
+            avatarContainer.innerHTML = defaultAvatarSvg;
+            <?php endif; ?>
         });
     });
 });
