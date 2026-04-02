@@ -114,7 +114,9 @@ class Updater {
      */
     public function downloadUpdate($version) {
         // 构建下载 URL（使用 Gitee 的 zip 下载链接）
-        $downloadUrl = "https://gitee.com/{$this->repoOwner}/{$this->repoName}/repository/archive/{$version}";
+        // 确保版本号带有 v 前缀
+        $tagName = (strpos($version, 'v') === 0) ? $version : 'v' . $version;
+        $downloadUrl = "https://gitee.com/{$this->repoOwner}/{$this->repoName}/repository/archive/{$tagName}.zip";
         
         $fileName = "hubbs-{$version}.zip";
         $filePath = $this->updateDir . $fileName;
@@ -127,12 +129,17 @@ class Updater {
         // 下载文件
         $content = $this->httpGet($downloadUrl);
         if (!$content) {
-            return ['success' => false, 'error' => '下载更新包失败'];
+            return ['success' => false, 'error' => '下载更新包失败，请检查网络连接或版本号是否正确'];
+        }
+        
+        // 验证下载的是否是有效的 zip 文件（检查文件头）
+        if (strlen($content) < 4 || substr($content, 0, 4) !== "PK\x03\x04") {
+            return ['success' => false, 'error' => '下载的文件不是有效的 ZIP 格式，可能是版本号错误或仓库不存在'];
         }
         
         // 保存文件
         if (file_put_contents($filePath, $content) === false) {
-            return ['success' => false, 'error' => '保存更新包失败'];
+            return ['success' => false, 'error' => '保存更新包失败，请检查目录权限'];
         }
         
         return ['success' => true, 'file' => $filePath];
@@ -350,6 +357,13 @@ class Updater {
         if ($httpCode !== 200 || $response === false) {
             // 记录错误日志
             error_log("[HuBBS Updater] HTTP请求失败: URL={$url}, HTTPCode={$httpCode}, Error={$curlError}");
+            
+            // 如果返回了内容但HTTP码不是200，也记录下来
+            if ($response !== false && !empty($response)) {
+                $responsePreview = substr($response, 0, 200);
+                error_log("[HuBBS Updater] 响应内容预览: " . $responsePreview);
+            }
+            
             return false;
         }
 
