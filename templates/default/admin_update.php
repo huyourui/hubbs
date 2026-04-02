@@ -3,13 +3,11 @@
  * HuBBS - 后台系统更新页面
  */
 $pageTitle = '系统更新';
-include __DIR__ . '/header.php';
+$action = 'update';
+include __DIR__ . '/admin_header.php';
 ?>
 
-<div class="admin-container">
-    <?php include __DIR__ . '/admin_sidebar.php'; ?>
-    
-    <div class="admin-content">
+<div class="admin-dashboard">
         <div class="admin-header">
             <h1>系统更新</h1>
         </div>
@@ -125,7 +123,7 @@ include __DIR__ . '/header.php';
                         <tr>
                             <td><?php echo date('Y-m-d H:i:s', $backup['time']); ?></td>
                             <td><?php e($version); ?></td>
-                            <td><?php echo format_size($backup['size']); ?></td>
+                            <td><?php echo Utils::formatSize($backup['size']); ?></td>
                             <td>
                                 <form method="post" style="display: inline;" onsubmit="return confirm('确定要回滚到这个版本吗？当前数据将会丢失！');">
                                     <?php csrf_field(); ?>
@@ -391,5 +389,7 @@ document.querySelector('.update-form')?.addEventListener('submit', function() {
     btn.disabled = true;
 });
 </script>
+
+</div>
 
 <?php include __DIR__ . '/footer.php'; ?>
