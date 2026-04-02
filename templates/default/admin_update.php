@@ -15,11 +15,23 @@ include __DIR__ . '/admin_header.php';
         <?php if ($error): ?>
         <div class="alert alert-error"><?php e($error); ?></div>
         <?php endif; ?>
-        
+
         <?php if ($success): ?>
         <div class="alert alert-success"><?php e($success); ?></div>
         <?php endif; ?>
-        
+
+        <?php if (isset($checkResult['error']) && $checkResult['error']): ?>
+        <div class="alert alert-warning">
+            <strong>检查更新失败：</strong><?php e($checkResult['error']); ?>
+            <p style="margin-top: 10px; font-size: 14px;">
+                可能的原因：<br>
+                1. 服务器无法连接 Gitee API<br>
+                2. Gitee 仓库没有创建 Release<br>
+                3. 网络连接问题
+            </p>
+        </div>
+        <?php endif; ?>
+
         <!-- 版本信息卡片 -->
         <div class="update-cards">
             <div class="update-card">

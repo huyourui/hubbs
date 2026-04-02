@@ -1250,6 +1250,7 @@ class AdminModule {
                 'backups' => $backups,
                 'error' => $error,
                 'success' => $success,
+                'checkResult' => $checkResult,
             ]
         ];
     }
