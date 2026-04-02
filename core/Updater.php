@@ -113,10 +113,17 @@ class Updater {
      * @return array ['success' => bool, 'file' => string, 'error' => string]
      */
     public function downloadUpdate($version) {
-        // 构建下载 URL（使用 Gitee 的 zip 下载链接）
         // 确保版本号带有 v 前缀
         $tagName = (strpos($version, 'v') === 0) ? $version : 'v' . $version;
-        $downloadUrl = "https://gitee.com/{$this->repoOwner}/{$this->repoName}/repository/archive/{$tagName}.zip";
+        
+        // 从 Release API 获取下载链接
+        $releaseInfo = $this->getReleaseByTag($tagName);
+        if (!$releaseInfo || empty($releaseInfo['zipball_url'])) {
+            // 如果API获取失败，尝试使用Gitee的归档下载链接
+            $downloadUrl = "https://gitee.com/{$this->repoOwner}/{$this->repoName}/repository/archive/{$tagName}";
+        } else {
+            $downloadUrl = $releaseInfo['zipball_url'];
+        }
         
         $fileName = "hubbs-{$version}.zip";
         $filePath = $this->updateDir . $fileName;
@@ -134,6 +141,9 @@ class Updater {
         
         // 验证下载的是否是有效的 zip 文件（检查文件头）
         if (strlen($content) < 4 || substr($content, 0, 4) !== "PK\x03\x04") {
+            // 记录实际内容用于调试
+            $contentPreview = substr($content, 0, 100);
+            error_log("[HuBBS Updater] 下载内容预览: " . $contentPreview);
             return ['success' => false, 'error' => '下载的文件不是有效的 ZIP 格式，可能是版本号错误或仓库不存在'];
         }
         
@@ -143,6 +153,27 @@ class Updater {
         }
         
         return ['success' => true, 'file' => $filePath];
+    }
+    
+    /**
+     * 根据标签获取 Release 信息
+     * @param string $tagName
+     * @return array|null
+     */
+    private function getReleaseByTag($tagName) {
+        $url = "{$this->apiBase}/{$this->repoOwner}/{$this->repoName}/releases/tags/{$tagName}";
+        
+        $response = $this->httpGet($url);
+        if (!$response) {
+            return null;
+        }
+        
+        $data = json_decode($response, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return null;
+        }
+        
+        return $data;
     }
     
     /**
@@ -345,9 +376,16 @@ class Updater {
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 60);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'HuBBS-Updater/' . HUBBS_VERSION);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+        
+        // 设置请求头，模拟浏览器
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language: zh-CN,zh;q=0.9,en;q=0.8',
+            'Referer: https://gitee.com/'
+        ]);
 
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
