@@ -143,6 +143,12 @@ include __DIR__ . '/admin_header.php';
                                     <input type="hidden" name="backup" value="<?php e($backup['name']); ?>">
                                     <button type="submit" class="btn-small btn-warning">回滚</button>
                                 </form>
+                                <form method="post" style="display: inline; margin-left: 5px;" onsubmit="return confirm('确定要删除这个备份吗？删除后无法恢复！');">
+                                    <?php csrf_field(); ?>
+                                    <input type="hidden" name="action" value="delete_backup">
+                                    <input type="hidden" name="backup" value="<?php e($backup['name']); ?>">
+                                    <button type="submit" class="btn-small btn-danger">删除</button>
+                                </form>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -374,6 +380,15 @@ include __DIR__ . '/admin_header.php';
 
 .btn-warning:hover {
     background: #d48806;
+}
+
+.btn-danger {
+    background: #ff4d4f;
+    color: #fff;
+}
+
+.btn-danger:hover {
+    background: #ff7875;
 }
 
 /* 响应式 */

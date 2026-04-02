@@ -380,6 +380,24 @@ class Updater {
     }
     
     /**
+     * 删除指定备份
+     * @param string $backupName
+     * @return array
+     */
+    public function deleteBackup($backupName) {
+        $backupPath = $this->backupDir . $backupName . '/';
+        
+        if (!is_dir($backupPath)) {
+            return ['success' => false, 'message' => '备份不存在'];
+        }
+        
+        // 删除备份目录
+        $this->removeDirectory($backupPath);
+        
+        return ['success' => true, 'message' => '备份已删除'];
+    }
+    
+    /**
      * HTTP GET 请求
      * @param string $url
      * @return string|false

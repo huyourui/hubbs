@@ -1230,6 +1230,21 @@ class AdminModule {
                             $error = '回滚失败: ' . $rollbackResult['message'];
                         }
                         break;
+                        
+                    case 'delete_backup':
+                        $backupName = $_POST['backup'] ?? '';
+                        if (empty($backupName)) {
+                            $error = '请选择要删除的备份';
+                            break;
+                        }
+                        
+                        $deleteResult = $updater->deleteBackup($backupName);
+                        if ($deleteResult['success']) {
+                            $success = '备份已删除';
+                        } else {
+                            $error = '删除失败: ' . $deleteResult['message'];
+                        }
+                        break;
                 }
             }
         }
