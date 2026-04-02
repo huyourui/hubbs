@@ -1,11 +1,15 @@
 <?php
 /**
  * HuBBS - 自动更新系统
- * 基于 Gitee 仓库实现自动检测和更新
+ * 支持自建更新服务器 + Gitee + 手动上传
  */
 
 class Updater {
-    // Gitee 仓库信息
+    // 自建更新服务器配置（优先使用）
+    private $updateServer = 'https://update.bbs.huyourui.com';
+    private $useCustomServer = true; // 设置为true优先使用自建服务器
+    
+    // Gitee 仓库信息（备用）
     private $repoOwner = 'youruihu';
     private $repoName = 'hubbs';
     private $apiBase = 'https://gitee.com/api/v5/repos';
@@ -43,6 +47,82 @@ class Updater {
      */
     public function checkUpdate() {
         $localVersion = HUBBS_VERSION;
+        
+        // 优先使用自建更新服务器
+        if ($this->useCustomServer) {
+            $result = $this->checkUpdateFromCustomServer();
+            if ($result && empty($result['error'])) {
+                return $result;
+            }
+            // 自建服务器失败，记录日志并尝试Gitee
+            error_log('[HuBBS Updater] 自建服务器检查失败，尝试Gitee: ' . ($result['error'] ?? 'Unknown'));
+        }
+        
+        // 使用Gitee作为备用
+        return $this->checkUpdateFromGitee();
+    }
+    
+    /**
+     * 从自建更新服务器检查更新
+     */
+    private function checkUpdateFromCustomServer() {
+        $localVersion = HUBBS_VERSION;
+        $url = rtrim($this->updateServer, '/') . '/check.php?version=' . urlencode($localVersion);
+        
+        $response = $this->httpGet($url);
+        if (!$response) {
+            return [
+                'has_update' => false,
+                'local_version' => $localVersion,
+                'remote_version' => null,
+                'release_info' => null,
+                'error' => '无法连接自建更新服务器'
+            ];
+        }
+        
+        $data = json_decode($response, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return [
+                'has_update' => false,
+                'local_version' => $localVersion,
+                'remote_version' => null,
+                'release_info' => null,
+                'error' => '自建服务器返回数据格式错误'
+            ];
+        }
+        
+        if (empty($data['success'])) {
+            return [
+                'has_update' => false,
+                'local_version' => $localVersion,
+                'remote_version' => null,
+                'release_info' => null,
+                'error' => $data['error'] ?? '自建服务器返回错误'
+            ];
+        }
+        
+        // 转换格式以兼容原有接口
+        return [
+            'has_update' => $data['has_update'] ?? false,
+            'local_version' => $localVersion,
+            'remote_version' => $data['latest_version'] ?? null,
+            'release_info' => [
+                'tag_name' => 'v' . ($data['latest_version'] ?? ''),
+                'body' => $data['release_notes'] ?? '',
+                'published_at' => $data['release_date'] ?? '',
+                'download_url' => $data['download_url'] ?? '',
+                'file_size' => $data['file_size'] ?? 0,
+                'file_hash' => $data['file_hash'] ?? '',
+            ],
+            'error' => null
+        ];
+    }
+    
+    /**
+     * 从Gitee检查更新（备用）
+     */
+    private function checkUpdateFromGitee() {
+        $localVersion = HUBBS_VERSION;
         $releaseInfo = $this->getLatestRelease();
 
         if (!$releaseInfo) {
@@ -51,7 +131,7 @@ class Updater {
                 'local_version' => $localVersion,
                 'remote_version' => null,
                 'release_info' => null,
-                'error' => '无法获取远程版本信息，请检查网络连接或 Gitee 仓库设置'
+                'error' => '无法获取远程版本信息，请检查网络连接'
             ];
         }
 
@@ -110,9 +190,10 @@ class Updater {
     /**
      * 下载更新包
      * @param string $version 版本号
+     * @param string $downloadUrl 可选，指定下载链接
      * @return array ['success' => bool, 'file' => string, 'error' => string]
      */
-    public function downloadUpdate($version) {
+    public function downloadUpdate($version, $downloadUrl = '') {
         // 确保版本号带有 v 前缀
         $tagName = (strpos($version, 'v') === 0) ? $version : 'v' . $version;
         
@@ -124,7 +205,20 @@ class Updater {
             unlink($filePath);
         }
         
-        // 方法1: 尝试使用 git 命令克隆并打包（如果系统支持）
+        // 方法1: 如果提供了下载链接（来自自建服务器），优先使用
+        if (!empty($downloadUrl)) {
+            error_log("[HuBBS Updater] 使用自建服务器下载链接: {$downloadUrl}");
+            $content = $this->httpGet($downloadUrl);
+            if ($content && strlen($content) >= 4 && substr($content, 0, 4) === "PK\x03\x04") {
+                if (file_put_contents($filePath, $content) === false) {
+                    return ['success' => false, 'error' => '保存更新包失败，请检查目录权限'];
+                }
+                return ['success' => true, 'file' => $filePath];
+            }
+            error_log("[HuBBS Updater] 自建服务器下载失败，尝试其他方式");
+        }
+        
+        // 方法2: 尝试使用 git 命令克隆并打包（如果系统支持）
         if ($this->isGitAvailable()) {
             $result = $this->downloadWithGit($tagName, $filePath);
             if ($result['success']) {
@@ -133,7 +227,7 @@ class Updater {
             error_log("[HuBBS Updater] Git方式下载失败: " . $result['error']);
         }
         
-        // 方法2: 尝试直接下载（可能会被Gitee验证码拦截）
+        // 方法3: 尝试Gitee下载（可能会被验证码拦截）
         $downloadUrls = [
             "https://gitee.com/api/v5/repos/{$this->repoOwner}/{$this->repoName}/zipball/{$tagName}",
             "https://gitee.com/{$this->repoOwner}/{$this->repoName}/zipball/{$tagName}",
@@ -142,10 +236,10 @@ class Updater {
         ];
         
         $lastError = '';
-        foreach ($downloadUrls as $index => $downloadUrl) {
-            error_log("[HuBBS Updater] 尝试下载方式" . ($index + 1) . ": {$downloadUrl}");
+        foreach ($downloadUrls as $index => $url) {
+            error_log("[HuBBS Updater] 尝试Gitee下载方式" . ($index + 1) . ": {$url}");
             
-            $content = $this->httpGet($downloadUrl);
+            $content = $this->httpGet($url);
             if (!$content) {
                 $lastError = '下载更新包失败，请检查网络连接';
                 continue;
@@ -157,20 +251,20 @@ class Updater {
                     return ['success' => false, 'error' => '保存更新包失败，请检查目录权限'];
                 }
                 
-                error_log("[HuBBS Updater] 下载成功，使用方式" . ($index + 1));
+                error_log("[HuBBS Updater] Gitee下载成功，使用方式" . ($index + 1));
                 return ['success' => true, 'file' => $filePath];
             }
             
             // 记录失败的内容预览
             $contentPreview = substr($content, 0, 100);
-            error_log("[HuBBS Updater] 方式" . ($index + 1) . "返回的不是ZIP: " . $contentPreview);
+            error_log("[HuBBS Updater] Gitee方式" . ($index + 1) . "返回的不是ZIP: " . $contentPreview);
             $lastError = '下载的文件不是有效的 ZIP 格式';
         }
         
         // 所有方式都失败了，返回详细错误信息
         return [
             'success' => false, 
-            'error' => '无法下载更新包。可能原因：\n1. Gitee开启了机器验证\n2. 服务器未安装Git\n3. 版本号不存在\n\n建议手动下载更新包上传，或联系管理员处理。'
+            'error' => '无法下载更新包。可能原因：\n1. 更新服务器无法连接\n2. Gitee开启了机器验证\n3. 服务器未安装Git\n4. 版本号不存在\n\n建议手动下载更新包上传，或联系管理员处理。'
         ];
     }
     
