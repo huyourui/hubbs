@@ -116,14 +116,17 @@ class Updater {
         // 确保版本号带有 v 前缀
         $tagName = (strpos($version, 'v') === 0) ? $version : 'v' . $version;
         
-        // 从 Release API 获取下载链接
-        $releaseInfo = $this->getReleaseByTag($tagName);
-        if (!$releaseInfo || empty($releaseInfo['zipball_url'])) {
-            // 如果API获取失败，尝试使用Gitee的归档下载链接
-            $downloadUrl = "https://gitee.com/{$this->repoOwner}/{$this->repoName}/repository/archive/{$tagName}";
-        } else {
-            $downloadUrl = $releaseInfo['zipball_url'];
-        }
+        // 尝试多种下载方式
+        $downloadUrls = [
+            // 方式1: Gitee API zipball
+            "https://gitee.com/api/v5/repos/{$this->repoOwner}/{$this->repoName}/zipball/{$tagName}",
+            // 方式2: Gitee raw zipball
+            "https://gitee.com/{$this->repoOwner}/{$this->repoName}/zipball/{$tagName}",
+            // 方式3: Gitee archive
+            "https://gitee.com/{$this->repoOwner}/{$this->repoName}/repository/archive/{$tagName}.zip",
+            // 方式4: Gitee archive (无后缀)
+            "https://gitee.com/{$this->repoOwner}/{$this->repoName}/repository/archive/{$tagName}",
+        ];
         
         $fileName = "hubbs-{$version}.zip";
         $filePath = $this->updateDir . $fileName;
@@ -133,26 +136,36 @@ class Updater {
             unlink($filePath);
         }
         
-        // 下载文件
-        $content = $this->httpGet($downloadUrl);
-        if (!$content) {
-            return ['success' => false, 'error' => '下载更新包失败，请检查网络连接或版本号是否正确'];
-        }
-        
-        // 验证下载的是否是有效的 zip 文件（检查文件头）
-        if (strlen($content) < 4 || substr($content, 0, 4) !== "PK\x03\x04") {
-            // 记录实际内容用于调试
+        // 尝试所有下载方式
+        $lastError = '';
+        foreach ($downloadUrls as $index => $downloadUrl) {
+            error_log("[HuBBS Updater] 尝试下载方式" . ($index + 1) . ": {$downloadUrl}");
+            
+            $content = $this->httpGet($downloadUrl);
+            if (!$content) {
+                $lastError = '下载更新包失败，请检查网络连接';
+                continue;
+            }
+            
+            // 验证下载的是否是有效的 zip 文件（检查文件头）
+            if (strlen($content) >= 4 && substr($content, 0, 4) === "PK\x03\x04") {
+                // 验证成功，保存文件
+                if (file_put_contents($filePath, $content) === false) {
+                    return ['success' => false, 'error' => '保存更新包失败，请检查目录权限'];
+                }
+                
+                error_log("[HuBBS Updater] 下载成功，使用方式" . ($index + 1));
+                return ['success' => true, 'file' => $filePath];
+            }
+            
+            // 记录失败的内容预览
             $contentPreview = substr($content, 0, 100);
-            error_log("[HuBBS Updater] 下载内容预览: " . $contentPreview);
-            return ['success' => false, 'error' => '下载的文件不是有效的 ZIP 格式，可能是版本号错误或仓库不存在'];
+            error_log("[HuBBS Updater] 方式" . ($index + 1) . "返回的不是ZIP: " . $contentPreview);
+            $lastError = '下载的文件不是有效的 ZIP 格式';
         }
         
-        // 保存文件
-        if (file_put_contents($filePath, $content) === false) {
-            return ['success' => false, 'error' => '保存更新包失败，请检查目录权限'];
-        }
-        
-        return ['success' => true, 'file' => $filePath];
+        // 所有方式都失败了
+        return ['success' => false, 'error' => $lastError . '，可能是版本号错误或仓库不存在'];
     }
     
     /**
