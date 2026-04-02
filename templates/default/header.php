@@ -14,15 +14,15 @@
     <meta name="keywords" content="<?php e(Settings::get('site_keywords', 'HuBBS,论坛,开源,PHP')); ?>">
     <meta name="description" content="<?php e(Settings::get('site_description', 'HuBBS是一款轻量级开源论坛程序')); ?>">
     <title><?php echo isset($pageTitle) && $pageTitle ? h($pageTitle) . ' - ' : ''; ?><?php e(Settings::getFullTitle()); ?></title>
-    <link rel="stylesheet" href="<?php echo base_url('static/css/style.css'); ?>">
-    <link rel="stylesheet" href="<?php echo base_url('static/css/editor.css'); ?>">
-    <script src="<?php echo base_url('static/js/editor.js'); ?>"></script>
+    <link rel="stylesheet" href="<?php echo base_url('static/css/style.css?v=' . HUBBS_VERSION); ?>">
+    <link rel="stylesheet" href="<?php echo base_url('static/css/editor.css?v=' . HUBBS_VERSION); ?>">
+    <script src="<?php echo base_url('static/js/editor.js?v=' . HUBBS_VERSION); ?>"></script>
 </head>
 <body>
     <header class="header">
         <div class="container">
             <div class="logo">
-                <a href="index.php">
+                <a href="<?php echo base_url(); ?>">
                     <span class="logo-icon">Hu</span><span class="logo-text">BBS</span>
                 </a>
             </div>
@@ -32,8 +32,8 @@
                 <span></span>
             </button>
             <nav class="nav" id="mobileNav">
-                <a href="index.php" class="nav-link<?php echo $action === 'list' && empty($forumId) ? ' active' : ''; ?>">首页</a>
-                <a href="index.php?module=post&action=create" class="nav-link">发帖</a>
+                <a href="<?php echo base_url(); ?>" class="nav-link<?php echo (isset($action) && $action === 'list' && empty($forumId)) ? ' active' : ''; ?>">首页</a>
+                <a href="<?php echo base_url('index.php?module=post&action=create'); ?>" class="nav-link">发帖</a>
             </nav>
             <div class="user-nav">
                 <?php if (Auth::check()): 
@@ -41,7 +41,7 @@
                     $unreadCount = Notification::getUnreadCount($currentUser['id']);
                 ?>
                     <!-- 消息通知图标 -->
-                    <a href="index.php?module=notification&action=list" class="notification-bell <?php echo $unreadCount > 0 ? 'has-unread' : ''; ?>">
+                    <a href="<?php echo base_url('index.php?module=notification&action=list'); ?>" class="notification-bell <?php echo $unreadCount > 0 ? 'has-unread' : ''; ?>">
                         <svg viewBox="0 0 24 24" width="22" height="22">
                             <path fill="currentColor" d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
                         </svg>
@@ -51,14 +51,14 @@
                     </a>
                     <span class="user-name"><?php echo $currentUser ? e($currentUser['username']) : '用户'; ?></span>
                     <?php if (Auth::isAdmin()): ?>
-                    <a href="index.php?module=admin" class="nav-link" style="color: #ff6b6b;">后台</a>
+                    <a href="<?php echo base_url('index.php?module=admin'); ?>" class="nav-link" style="color: #ff6b6b;">后台</a>
                     <?php endif; ?>
-                    <a href="index.php?module=user&action=profile" class="nav-link">个人中心</a>
-                    <a href="index.php?module=user&action=settings" class="nav-link">账号设置</a>
-                    <a href="index.php?module=user&action=logout" class="nav-link">退出</a>
+                    <a href="<?php echo base_url('index.php?module=user&action=profile'); ?>" class="nav-link">个人中心</a>
+                    <a href="<?php echo base_url('index.php?module=user&action=settings'); ?>" class="nav-link">账号设置</a>
+                    <a href="<?php echo base_url('index.php?module=user&action=logout'); ?>" class="nav-link">退出</a>
                 <?php else: ?>
-                    <a href="index.php?module=user&action=login" class="nav-link">登录</a>
-                    <a href="index.php?module=user&action=register" class="nav-link btn-small">注册</a>
+                    <a href="<?php echo base_url('index.php?module=user&action=login'); ?>" class="nav-link">登录</a>
+                    <a href="<?php echo base_url('index.php?module=user&action=register'); ?>" class="nav-link btn-small">注册</a>
                 <?php endif; ?>
             </div>
         </div>
