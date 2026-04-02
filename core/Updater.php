@@ -44,25 +44,37 @@ class Updater {
     public function checkUpdate() {
         $localVersion = HUBBS_VERSION;
         $releaseInfo = $this->getLatestRelease();
-        
+
         if (!$releaseInfo) {
             return [
                 'has_update' => false,
                 'local_version' => $localVersion,
                 'remote_version' => null,
                 'release_info' => null,
-                'error' => '无法获取远程版本信息'
+                'error' => '无法获取远程版本信息，请检查网络连接或 Gitee 仓库设置'
             ];
         }
-        
+
+        // 检查必要的字段
+        if (empty($releaseInfo['tag_name'])) {
+            return [
+                'has_update' => false,
+                'local_version' => $localVersion,
+                'remote_version' => null,
+                'release_info' => null,
+                'error' => '远程版本信息格式错误：缺少 tag_name'
+            ];
+        }
+
         $remoteVersion = $this->extractVersionFromTag($releaseInfo['tag_name']);
         $hasUpdate = version_compare($remoteVersion, $localVersion, '>');
-        
+
         return [
             'has_update' => $hasUpdate,
             'local_version' => $localVersion,
             'remote_version' => $remoteVersion,
-            'release_info' => $releaseInfo
+            'release_info' => $releaseInfo,
+            'error' => null
         ];
     }
     
@@ -329,15 +341,18 @@ class Updater {
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_USERAGENT, 'HuBBS-Updater/' . HUBBS_VERSION);
-        
+
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
         curl_close($ch);
-        
+
         if ($httpCode !== 200 || $response === false) {
+            // 记录错误日志
+            error_log("[HuBBS Updater] HTTP请求失败: URL={$url}, HTTPCode={$httpCode}, Error={$curlError}");
             return false;
         }
-        
+
         return $response;
     }
     

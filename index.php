@@ -15,6 +15,9 @@ if (!file_exists(HUBBS_ROOT . 'install.lock')) {
 require_once HUBBS_ROOT . 'core/config.php';
 require_once HUBBS_ROOT . 'core/db.php';
 require_once HUBBS_ROOT . 'core/functions.php';
+require_once HUBBS_ROOT . 'core/Utils.php';
+require_once HUBBS_ROOT . 'core/View.php';
+require_once HUBBS_ROOT . 'core/Pagination.php';
 require_once HUBBS_ROOT . 'core/Auth.php';
 require_once HUBBS_ROOT . 'core/migrate.php';
 require_once HUBBS_ROOT . 'core/Settings.php';
