@@ -5,6 +5,23 @@
 
 class AdminModule {
     
+    /**
+     * 获取上传错误信息
+     */
+    private function getUploadErrorMsg($errorCode) {
+        $errors = [
+            UPLOAD_ERR_OK => '上传成功',
+            UPLOAD_ERR_INI_SIZE => '文件大小超过服务器限制',
+            UPLOAD_ERR_FORM_SIZE => '文件大小超过表单限制',
+            UPLOAD_ERR_PARTIAL => '文件只有部分被上传',
+            UPLOAD_ERR_NO_FILE => '没有文件被上传',
+            UPLOAD_ERR_NO_TMP_DIR => '找不到临时文件夹',
+            UPLOAD_ERR_CANT_WRITE => '文件写入失败',
+            UPLOAD_ERR_EXTENSION => '上传被扩展阻止',
+        ];
+        return $errors[$errorCode] ?? '未知错误';
+    }
+    
     public function handle() {
         // 检查是否管理员
         if (!Auth::isAdmin()) {
@@ -1244,6 +1261,56 @@ class AdminModule {
                         } else {
                             $error = '删除失败: ' . $deleteResult['message'];
                         }
+                        break;
+                        
+                    case 'upload_update':
+                        // 处理手动上传的更新包
+                        if (!isset($_FILES['update_file']) || $_FILES['update_file']['error'] !== UPLOAD_ERR_OK) {
+                            $error = '上传失败: ' . ($this->getUploadErrorMsg($_FILES['update_file']['error'] ?? UPLOAD_ERR_NO_FILE));
+                            break;
+                        }
+                        
+                        $uploadedFile = $_FILES['update_file'];
+                        
+                        // 检查文件类型
+                        $fileExt = strtolower(pathinfo($uploadedFile['name'], PATHINFO_EXTENSION));
+                        if ($fileExt !== 'zip') {
+                            $error = '请上传 ZIP 格式的文件';
+                            break;
+                        }
+                        
+                        // 检查文件大小（最大50MB）
+                        if ($uploadedFile['size'] > 50 * 1024 * 1024) {
+                            $error = '文件大小不能超过 50MB';
+                            break;
+                        }
+                        
+                        // 验证ZIP文件
+                        $zip = new ZipArchive();
+                        if ($zip->open($uploadedFile['tmp_name']) !== true) {
+                            $error = '无效的 ZIP 文件';
+                            break;
+                        }
+                        $zip->close();
+                        
+                        // 1. 创建备份
+                        $backupResult = $updater->createBackup();
+                        if (!$backupResult['success']) {
+                            $error = '创建备份失败: ' . $backupResult['error'];
+                            break;
+                        }
+                        
+                        // 2. 应用更新
+                        $applyResult = $updater->applyUpdate($uploadedFile['tmp_name']);
+                        if (!$applyResult['success']) {
+                            $error = '更新失败: ' . $applyResult['message'];
+                            break;
+                        }
+                        
+                        // 3. 清理旧备份
+                        $updater->cleanupOldBackups();
+                        
+                        $success = '系统已更新，请刷新页面查看最新版本';
                         break;
                 }
             }

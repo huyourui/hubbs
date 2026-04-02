@@ -82,6 +82,9 @@ include __DIR__ . '/admin_header.php';
                         <span class="btn-loading" style="display: none;">更新中...</span>
                     </button>
                 </form>
+                <p class="update-tip">
+                    💡 如果自动更新失败，可以<a href="https://gitee.com/youruihu/hubbs/releases" target="_blank">手动下载</a>后使用下方上传功能
+                </p>
             <?php else: ?>
                 <div class="writable-warning">
                     <h4>⚠️ 无法更新，请检查以下问题：</h4>
@@ -92,6 +95,24 @@ include __DIR__ . '/admin_header.php';
                     </ul>
                 </div>
             <?php endif; ?>
+        </div>
+        
+        <!-- 手动上传更新 -->
+        <div class="upload-section">
+            <h3>手动上传更新</h3>
+            <p class="upload-desc">
+                如果自动更新失败，请从 <a href="https://gitee.com/youruihu/hubbs/releases" target="_blank">Gitee Release 页面</a> 
+                手动下载更新包（Source code (zip)），然后在此上传。
+            </p>
+            <form method="post" enctype="multipart/form-data" class="upload-form">
+                <?php csrf_field(); ?>
+                <input type="hidden" name="action" value="upload_update">
+                <div class="upload-input-wrapper">
+                    <input type="file" name="update_file" accept=".zip" required class="upload-input">
+                    <button type="submit" class="btn-primary">上传并更新</button>
+                </div>
+                <p class="upload-hint">支持格式：ZIP，最大 50MB</p>
+            </form>
         </div>
         <?php endif; ?>
         
@@ -389,6 +410,66 @@ include __DIR__ . '/admin_header.php';
 
 .btn-danger:hover {
     background: #ff7875;
+}
+
+/* 更新提示 */
+.update-tip {
+    margin-top: 15px;
+    color: #666;
+    font-size: 14px;
+}
+
+.update-tip a {
+    color: #1890ff;
+}
+
+/* 手动上传 */
+.upload-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 30px;
+}
+
+.upload-section h3 {
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+.upload-desc {
+    color: #666;
+    margin-bottom: 15px;
+    line-height: 1.6;
+}
+
+.upload-desc a {
+    color: #1890ff;
+}
+
+.upload-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.upload-input-wrapper {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.upload-input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    background: #fff;
+}
+
+.upload-hint {
+    color: #999;
+    font-size: 12px;
+    margin: 0;
 }
 
 /* 响应式 */
