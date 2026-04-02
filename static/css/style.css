@@ -97,19 +97,20 @@ a:hover {
     display: flex;
     flex: 1;
     gap: 25px;
+    align-items: center;
 }
 
-.nav-link {
-    color: #666;
+.nav a.nav-link {
+    color: #333 !important;
     font-size: 15px;
     padding: 5px 0;
     border-bottom: 2px solid transparent;
     transition: all 0.3s;
 }
 
-.nav-link:hover,
-.nav-link.active {
-    color: #ff6b6b;
+.nav a.nav-link:hover,
+.nav a.nav-link.active {
+    color: #ff6b6b !important;
     border-bottom-color: #ff6b6b;
 }
 
@@ -118,6 +119,16 @@ a:hover {
     align-items: center;
     gap: 15px;
     flex-shrink: 0;
+}
+
+.user-nav a.nav-link,
+.user-nav a.nav-link:link,
+.user-nav a.nav-link:visited {
+    color: #666 !important;
+}
+
+.user-nav a.nav-link:hover {
+    color: #ff6b6b !important;
 }
 
 /* 消息通知铃铛 */

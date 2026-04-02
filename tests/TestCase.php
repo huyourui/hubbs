@@ -1,165 +1,250 @@
 <?php
 /**
- * HuBBS - 单元测试基类
- * 简单的测试框架
+ * HuBBS - 测试基类
+ * 提供测试基础功能
  */
 
 class TestCase {
     
+    // 测试结果
     protected $passed = 0;
     protected $failed = 0;
-    protected $tests = [];
+    protected $errors = [];
     
     /**
-     * 运行所有测试
+     * 设置测试环境
      */
-    public function run() {
-        $methods = get_class_methods($this);
-        
-        echo "\n" . get_class($this) . "\n";
-        echo str_repeat("=", 50) . "\n";
-        
-        foreach ($methods as $method) {
-            if (strpos($method, 'test') === 0) {
-                $this->runTest($method);
-            }
-        }
-        
-        $this->printSummary();
+    public function setUp() {
+        // 子类可覆盖
     }
     
     /**
-     * 运行单个测试
-     * @param string $method
+     * 清理测试环境
      */
-    protected function runTest($method) {
-        try {
-            $this->setUp();
-            $this->$method();
-            $this->tearDown();
-            $this->passed++;
-            $this->tests[] = ['name' => $method, 'status' => 'PASS'];
-            echo "✓ {$method}\n";
-        } catch (Exception $e) {
-            $this->failed++;
-            $this->tests[] = ['name' => $method, 'status' => 'FAIL', 'message' => $e->getMessage()];
-            echo "✗ {$method}\n";
-            echo "  Error: {$e->getMessage()}\n";
-        }
-    }
-    
-    /**
-     * 测试前置操作
-     */
-    protected function setUp() {
-        // 子类可重写
-    }
-    
-    /**
-     * 测试后置操作
-     */
-    protected function tearDown() {
-        // 子类可重写
+    public function tearDown() {
+        // 子类可覆盖
     }
     
     /**
      * 断言相等
-     * @param mixed $expected
-     * @param mixed $actual
-     * @param string $message
      */
     protected function assertEquals($expected, $actual, $message = '') {
-        if ($expected !== $actual) {
-            $msg = $message ?: "Expected: " . var_export($expected, true) . ", Actual: " . var_export($actual, true);
-            throw new Exception($msg);
+        if ($expected === $actual) {
+            $this->passed++;
+            return true;
         }
+        
+        $this->failed++;
+        $this->errors[] = [
+            'type' => 'assertEquals',
+            'message' => $message ?: "Expected: " . var_export($expected, true) . ", Got: " . var_export($actual, true),
+            'expected' => $expected,
+            'actual' => $actual
+        ];
+        return false;
     }
     
     /**
      * 断言为真
-     * @param mixed $condition
-     * @param string $message
      */
     protected function assertTrue($condition, $message = '') {
-        if (!$condition) {
-            throw new Exception($message ?: "Expected true, got false");
+        if ($condition === true) {
+            $this->passed++;
+            return true;
         }
+        
+        $this->failed++;
+        $this->errors[] = [
+            'type' => 'assertTrue',
+            'message' => $message ?: "Expected true, got false"
+        ];
+        return false;
     }
     
     /**
      * 断言为假
-     * @param mixed $condition
-     * @param string $message
      */
     protected function assertFalse($condition, $message = '') {
-        if ($condition) {
-            throw new Exception($message ?: "Expected false, got true");
+        if ($condition === false) {
+            $this->passed++;
+            return true;
         }
+        
+        $this->failed++;
+        $this->errors[] = [
+            'type' => 'assertFalse',
+            'message' => $message ?: "Expected false, got true"
+        ];
+        return false;
     }
     
     /**
      * 断言不为空
-     * @param mixed $value
-     * @param string $message
      */
     protected function assertNotEmpty($value, $message = '') {
-        if (empty($value)) {
-            throw new Exception($message ?: "Expected non-empty value");
+        if (!empty($value)) {
+            $this->passed++;
+            return true;
         }
+        
+        $this->failed++;
+        $this->errors[] = [
+            'type' => 'assertNotEmpty',
+            'message' => $message ?: "Expected non-empty value"
+        ];
+        return false;
     }
     
     /**
      * 断言为空
-     * @param mixed $value
-     * @param string $message
      */
     protected function assertEmpty($value, $message = '') {
-        if (!empty($value)) {
-            throw new Exception($message ?: "Expected empty value");
+        if (empty($value)) {
+            $this->passed++;
+            return true;
         }
+        
+        $this->failed++;
+        $this->errors[] = [
+            'type' => 'assertEmpty',
+            'message' => $message ?: "Expected empty value"
+        ];
+        return false;
     }
     
     /**
      * 断言包含
-     * @param string $needle
-     * @param string $haystack
-     * @param string $message
      */
     protected function assertContains($needle, $haystack, $message = '') {
-        if (strpos($haystack, $needle) === false) {
-            throw new Exception($message ?: "Expected '{$haystack}' to contain '{$needle}'");
+        if (strpos($haystack, $needle) !== false || (is_array($haystack) && in_array($needle, $haystack))) {
+            $this->passed++;
+            return true;
         }
+        
+        $this->failed++;
+        $this->errors[] = [
+            'type' => 'assertContains',
+            'message' => $message ?: "Expected to contain: {$needle}"
+        ];
+        return false;
+    }
+    
+    /**
+     * 断言大于
+     */
+    protected function assertGreaterThan($expected, $actual, $message = '') {
+        if ($actual > $expected) {
+            $this->passed++;
+            return true;
+        }
+        
+        $this->failed++;
+        $this->errors[] = [
+            'type' => 'assertGreaterThan',
+            'message' => $message ?: "Expected greater than {$expected}, got {$actual}"
+        ];
+        return false;
+    }
+    
+    /**
+     * 断言小于
+     */
+    protected function assertLessThan($expected, $actual, $message = '') {
+        if ($actual < $expected) {
+            $this->passed++;
+            return true;
+        }
+        
+        $this->failed++;
+        $this->errors[] = [
+            'type' => 'assertLessThan',
+            'message' => $message ?: "Expected less than {$expected}, got {$actual}"
+        ];
+        return false;
+    }
+    
+    /**
+     * 断言数组有键
+     */
+    protected function assertArrayHasKey($key, $array, $message = '') {
+        if (is_array($array) && array_key_exists($key, $array)) {
+            $this->passed++;
+            return true;
+        }
+        
+        $this->failed++;
+        $this->errors[] = [
+            'type' => 'assertArrayHasKey',
+            'message' => $message ?: "Expected array to have key: {$key}"
+        ];
+        return false;
     }
     
     /**
      * 断言抛出异常
-     * @param callable $callback
-     * @param string $expectedException
-     * @param string $message
      */
     protected function assertException($callback, $expectedException = 'Exception', $message = '') {
         try {
-            $callback();
-            throw new Exception($message ?: "Expected exception {$expectedException} was not thrown");
+            call_user_func($callback);
+            $this->failed++;
+            $this->errors[] = [
+                'type' => 'assertException',
+                'message' => $message ?: "Expected exception {$expectedException} was not thrown"
+            ];
+            return false;
         } catch (Exception $e) {
-            if (!($e instanceof $expectedException)) {
-                throw new Exception($message ?: "Expected {$expectedException}, got " . get_class($e));
+            if ($e instanceof $expectedException) {
+                $this->passed++;
+                return true;
             }
+            
+            $this->failed++;
+            $this->errors[] = [
+                'type' => 'assertException',
+                'message' => $message ?: "Expected {$expectedException}, got " . get_class($e)
+            ];
+            return false;
         }
     }
     
     /**
-     * 打印测试摘要
+     * 获取测试结果
      */
-    protected function printSummary() {
-        echo "\n" . str_repeat("=", 50) . "\n";
-        $total = $this->passed + $this->failed;
-        echo "Total: {$total}, Passed: {$this->passed}, Failed: {$this->failed}\n";
+    public function getResults() {
+        return [
+            'passed' => $this->passed,
+            'failed' => $this->failed,
+            'total' => $this->passed + $this->failed,
+            'errors' => $this->errors
+        ];
+    }
+    
+    /**
+     * 运行所有测试方法
+     */
+    public function run() {
+        $this->setUp();
         
-        if ($this->failed === 0) {
-            echo "All tests passed! ✓\n";
-        } else {
-            echo "Some tests failed! ✗\n";
+        $methods = get_class_methods($this);
+        foreach ($methods as $method) {
+            if (strpos($method, 'test') === 0) {
+                try {
+                    $this->$method();
+                } catch (Exception $e) {
+                    $this->failed++;
+                    $this->errors[] = [
+                        'type' => 'exception',
+                        'method' => $method,
+                        'message' => $e->getMessage(),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine()
+                    ];
+                }
+            }
         }
+        
+        $this->tearDown();
+        
+        return $this->getResults();
     }
 }

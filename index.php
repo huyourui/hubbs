@@ -1,6 +1,8 @@
 <?php
 /**
  * HuBBS - 轻量级开源论坛系统
+ * 
+ * 入口文件 - 加载核心组件并路由请求
  */
 
 define('HUBBS_ROOT', __DIR__ . '/');
@@ -11,7 +13,7 @@ if (!file_exists(HUBBS_ROOT . 'install.lock')) {
     exit;
 }
 
-// 加载核心文件
+// ==================== 加载核心文件 ====================
 require_once HUBBS_ROOT . 'core/config.php';
 require_once HUBBS_ROOT . 'core/db.php';
 require_once HUBBS_ROOT . 'core/functions.php';
@@ -25,45 +27,43 @@ require_once HUBBS_ROOT . 'core/notification.php';
 require_once HUBBS_ROOT . 'core/Upload.php';
 require_once HUBBS_ROOT . 'core/Updater.php';
 
-// 执行数据库迁移（无感）
-Migrate::run();
+// ==================== 加载ORM系统 ====================
+require_once HUBBS_ROOT . 'core/Model.php';
 
-// 初始化认证
-Auth::init();
-
-// 路由处理
-$module = $_GET['module'] ?? 'post';
-$action = $_GET['action'] ?? 'list';
-
-// 加载模块
-$moduleFile = HUBBS_ROOT . 'modules/' . $module . '.php';
-if (file_exists($moduleFile)) {
-    require_once $moduleFile;
-    $className = ucfirst($module) . 'Module';
-    if (class_exists($className)) {
-        $moduleObj = new $className();
-        $result = $moduleObj->handle();
-        
-        if (is_array($result) && isset($result['template'])) {
-            // 渲染模板
-            $templateData = $result['data'] ?? [];
-            extract($templateData);
-            $templateFile = HUBBS_ROOT . 'templates/default/' . $result['template'] . '.php';
-            if (file_exists($templateFile)) {
-                include $templateFile;
-            } else {
-                die('模板不存在: ' . $result['template']);
-            }
-        }
-    }
-} else {
-    // 默认首页
-    require_once HUBBS_ROOT . 'modules/post.php';
-    $moduleObj = new PostModule();
-    $result = $moduleObj->handle();
-    if (is_array($result) && isset($result['template'])) {
-        $templateData = $result['data'] ?? [];
-        extract($templateData);
-        include HUBBS_ROOT . 'templates/default/' . $result['template'] . '.php';
+// 自动加载模型类
+function autoloadModels($class) {
+    $modelFile = HUBBS_ROOT . 'models/' . $class . '.php';
+    if (file_exists($modelFile)) {
+        require_once $modelFile;
     }
 }
+spl_autoload_register('autoloadModels');
+
+// ==================== 加载路由系统 ====================
+require_once HUBBS_ROOT . 'core/Router.php';
+
+// ==================== 加载API组件 ====================
+require_once HUBBS_ROOT . 'api/ApiResponse.php';
+require_once HUBBS_ROOT . 'api/ApiAuth.php';
+
+// 自动加载API控制器
+function autoloadApi($class) {
+    $apiFile = HUBBS_ROOT . 'api/' . $class . '.php';
+    if (file_exists($apiFile)) {
+        require_once $apiFile;
+    }
+}
+spl_autoload_register('autoloadApi');
+
+// ==================== 执行数据库迁移（无感） ====================
+Migrate::run();
+
+// ==================== 初始化认证 ====================
+Auth::init();
+
+// ==================== 路由处理 ====================
+// 加载API路由配置
+require_once HUBBS_ROOT . 'api/routes.php';
+
+// 执行路由调度
+Router::dispatch();
