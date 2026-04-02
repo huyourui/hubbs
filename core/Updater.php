@@ -116,18 +116,6 @@ class Updater {
         // 确保版本号带有 v 前缀
         $tagName = (strpos($version, 'v') === 0) ? $version : 'v' . $version;
         
-        // 尝试多种下载方式
-        $downloadUrls = [
-            // 方式1: Gitee API zipball
-            "https://gitee.com/api/v5/repos/{$this->repoOwner}/{$this->repoName}/zipball/{$tagName}",
-            // 方式2: Gitee raw zipball
-            "https://gitee.com/{$this->repoOwner}/{$this->repoName}/zipball/{$tagName}",
-            // 方式3: Gitee archive
-            "https://gitee.com/{$this->repoOwner}/{$this->repoName}/repository/archive/{$tagName}.zip",
-            // 方式4: Gitee archive (无后缀)
-            "https://gitee.com/{$this->repoOwner}/{$this->repoName}/repository/archive/{$tagName}",
-        ];
-        
         $fileName = "hubbs-{$version}.zip";
         $filePath = $this->updateDir . $fileName;
         
@@ -136,7 +124,23 @@ class Updater {
             unlink($filePath);
         }
         
-        // 尝试所有下载方式
+        // 方法1: 尝试使用 git 命令克隆并打包（如果系统支持）
+        if ($this->isGitAvailable()) {
+            $result = $this->downloadWithGit($tagName, $filePath);
+            if ($result['success']) {
+                return $result;
+            }
+            error_log("[HuBBS Updater] Git方式下载失败: " . $result['error']);
+        }
+        
+        // 方法2: 尝试直接下载（可能会被Gitee验证码拦截）
+        $downloadUrls = [
+            "https://gitee.com/api/v5/repos/{$this->repoOwner}/{$this->repoName}/zipball/{$tagName}",
+            "https://gitee.com/{$this->repoOwner}/{$this->repoName}/zipball/{$tagName}",
+            "https://gitee.com/{$this->repoOwner}/{$this->repoName}/repository/archive/{$tagName}.zip",
+            "https://gitee.com/{$this->repoOwner}/{$this->repoName}/repository/archive/{$tagName}",
+        ];
+        
         $lastError = '';
         foreach ($downloadUrls as $index => $downloadUrl) {
             error_log("[HuBBS Updater] 尝试下载方式" . ($index + 1) . ": {$downloadUrl}");
@@ -149,7 +153,6 @@ class Updater {
             
             // 验证下载的是否是有效的 zip 文件（检查文件头）
             if (strlen($content) >= 4 && substr($content, 0, 4) === "PK\x03\x04") {
-                // 验证成功，保存文件
                 if (file_put_contents($filePath, $content) === false) {
                     return ['success' => false, 'error' => '保存更新包失败，请检查目录权限'];
                 }
@@ -164,8 +167,92 @@ class Updater {
             $lastError = '下载的文件不是有效的 ZIP 格式';
         }
         
-        // 所有方式都失败了
-        return ['success' => false, 'error' => $lastError . '，可能是版本号错误或仓库不存在'];
+        // 所有方式都失败了，返回详细错误信息
+        return [
+            'success' => false, 
+            'error' => '无法下载更新包。可能原因：\n1. Gitee开启了机器验证\n2. 服务器未安装Git\n3. 版本号不存在\n\n建议手动下载更新包上传，或联系管理员处理。'
+        ];
+    }
+    
+    /**
+     * 检查系统是否支持Git
+     * @return bool
+     */
+    private function isGitAvailable() {
+        exec('which git 2>/dev/null', $output, $returnCode);
+        return $returnCode === 0 && !empty($output);
+    }
+    
+    /**
+     * 使用Git下载指定版本的代码
+     * @param string $tagName
+     * @param string $zipFilePath
+     * @return array
+     */
+    private function downloadWithGit($tagName, $zipFilePath) {
+        $tempDir = $this->updateDir . 'git-clone-' . time() . '/';
+        
+        if (!mkdir($tempDir, 0755, true)) {
+            return ['success' => false, 'error' => '创建临时目录失败'];
+        }
+        
+        try {
+            // 克隆仓库（浅克隆，只下载最新提交）
+            $repoUrl = "https://gitee.com/{$this->repoOwner}/{$this->repoName}.git";
+            $cloneCmd = "cd " . escapeshellarg($tempDir) . " && git clone --depth 1 --branch " . escapeshellarg($tagName) . " " . escapeshellarg($repoUrl) . " hubbs 2>&1";
+            
+            error_log("[HuBBS Updater] 执行Git克隆: {$cloneCmd}");
+            exec($cloneCmd, $output, $returnCode);
+            
+            if ($returnCode !== 0) {
+                $this->removeDirectory($tempDir);
+                return ['success' => false, 'error' => 'Git克隆失败: ' . implode("\n", $output)];
+            }
+            
+            $sourceDir = $tempDir . 'hubbs/';
+            if (!is_dir($sourceDir)) {
+                $this->removeDirectory($tempDir);
+                return ['success' => false, 'error' => '克隆后的目录不存在'];
+            }
+            
+            // 打包为zip
+            $zip = new ZipArchive();
+            if ($zip->open($zipFilePath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+                $this->removeDirectory($tempDir);
+                return ['success' => false, 'error' => '无法创建ZIP文件'];
+            }
+            
+            $files = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($sourceDir, RecursiveDirectoryIterator::SKIP_DOTS),
+                RecursiveIteratorIterator::LEAVES_ONLY
+            );
+            
+            foreach ($files as $file) {
+                $filePath = $file->getRealPath();
+                $relativePath = substr($filePath, strlen($sourceDir));
+                
+                if (!$file->isDir()) {
+                    $zip->addFile($filePath, $relativePath);
+                } else {
+                    $zip->addEmptyDir($relativePath);
+                }
+            }
+            
+            $zip->close();
+            
+            // 清理临时目录
+            $this->removeDirectory($tempDir);
+            
+            if (!file_exists($zipFilePath)) {
+                return ['success' => false, 'error' => 'ZIP文件创建失败'];
+            }
+            
+            return ['success' => true, 'file' => $zipFilePath];
+            
+        } catch (Exception $e) {
+            $this->removeDirectory($tempDir);
+            return ['success' => false, 'error' => 'Git下载异常: ' . $e->getMessage()];
+        }
     }
     
     /**
