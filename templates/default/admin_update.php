@@ -65,53 +65,28 @@ include __DIR__ . '/admin_header.php';
         <?php if ($hasUpdate && $releaseInfo): ?>
         <!-- 更新内容 -->
         <div class="update-section">
-            <h3>更新内容</h3>
+            <h3>🎉 发现新版本 v<?php e($remoteVersion); ?></h3>
             <div class="update-body">
                 <?php echo nl2br(h($releaseInfo['body'] ?? '暂无更新说明')); ?>
             </div>
-        </div>
-        
-        <!-- 更新操作 -->
-        <div class="update-actions">
-            <?php if ($writable['writable']): ?>
-                <div class="update-notice">
-                    <div class="notice-icon">ℹ️</div>
-                    <div class="notice-content">
-                        <p><strong>自动更新说明：</strong></p>
-                        <p>由于 Gitee 开启了机器验证，程序无法自动下载更新包。</p>
-                        <p>请按照以下步骤手动更新：</p>
-                        <ol>
-                            <li>点击下方按钮访问 Gitee Release 页面</li>
-                            <li>下载对应版本的 <strong>Source code (zip)</strong></li>
-                            <li>在下方"手动上传更新"区域上传 ZIP 文件</li>
-                            <li>点击"上传并更新"完成升级</li>
-                        </ol>
-                    </div>
-                </div>
-                
-                <div class="update-buttons">
-                    <a href="<?php echo $releasePageUrl; ?>" target="_blank" class="btn-primary btn-large">
-                        📥 前往 Gitee 下载 v<?php e($remoteVersion); ?>
-                    </a>
-                </div>
-            <?php else: ?>
-                <div class="writable-warning">
-                    <h4>⚠️ 无法更新，请检查以下问题：</h4>
-                    <ul>
-                        <?php foreach ($writable['issues'] as $issue): ?>
-                        <li><?php e($issue); ?></li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
+            <?php if (!empty($releasePageUrl)): ?>
+            <div class="update-buttons" style="margin-top: 15px;">
+                <a href="<?php echo $releasePageUrl; ?>" target="_blank" class="btn-primary">
+                    📥 查看 Release 详情
+                </a>
+            </div>
             <?php endif; ?>
         </div>
+        <?php endif; ?>
         
         <!-- 手动上传更新 -->
         <div class="upload-section">
             <h3>手动上传更新</h3>
             <p class="upload-desc">
-                下载更新包后，在此上传并自动完成升级。
+                如果无法自动检测最新版本，可以手动下载更新包后在此上传并自动完成升级。
+                <br><a href="https://gitee.com/youruihu/hubbs/releases" target="_blank" style="color: #1890ff;">点击前往 Gitee 下载最新版本 →</a>
             </p>
+            <?php if ($writable['writable']): ?>
             <form method="post" enctype="multipart/form-data" class="upload-form">
                 <?php csrf_field(); ?>
                 <input type="hidden" name="action" value="upload_update">
@@ -121,8 +96,17 @@ include __DIR__ . '/admin_header.php';
                 </div>
                 <p class="upload-hint">支持格式：ZIP，最大 50MB</p>
             </form>
+            <?php else: ?>
+            <div class="writable-warning">
+                <h4>⚠️ 无法上传更新，请检查以下问题：</h4>
+                <ul>
+                    <?php foreach ($writable['issues'] as $issue): ?>
+                    <li><?php e($issue); ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+            <?php endif; ?>
         </div>
-        <?php endif; ?>
         
         <!-- 系统检测 -->
         <div class="check-section">
