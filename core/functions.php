@@ -5,25 +5,27 @@
 
 // 获取基础 URL
 function base_url($path = '') {
-    static $baseUrl = null;
-    if ($baseUrl === null) {
-        // 获取当前脚本的路径
-        $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
-        // 获取目录部分
-        $dir = dirname($scriptName);
-        // 如果是根目录，使用空字符串
-        if ($dir === '/' || $dir === '\\') {
-            $baseUrl = '';
-        } else {
-            $baseUrl = $dir;
+    // 使用 SCRIPT_NAME 获取基础路径
+    // SCRIPT_NAME 始终是入口文件的路径，如 /hubbs/index.php
+    $scriptName = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '';
+    
+    // 获取目录部分
+    $basePath = '';
+    if (!empty($scriptName)) {
+        // 找到最后一个 / 的位置
+        $lastSlash = strrpos($scriptName, '/');
+        if ($lastSlash !== false) {
+            $basePath = substr($scriptName, 0, $lastSlash);
         }
-        // 确保不以斜杠结尾
-        $baseUrl = rtrim($baseUrl, '/');
     }
+    
+    // 确保不以斜杠结尾（根目录除外）
+    $basePath = rtrim($basePath, '/');
+    
     if ($path) {
-        return $baseUrl . '/' . ltrim($path, '/');
+        return $basePath . '/' . ltrim($path, '/');
     }
-    return $baseUrl;
+    return $basePath;
 }
 
 // 安全过滤

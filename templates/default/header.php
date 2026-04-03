@@ -22,7 +22,7 @@
     <header class="header">
         <div class="container">
             <div class="logo">
-                <a href="<?php echo base_url(); ?>">
+                <a href="/">
                     <span class="logo-icon">Hu</span><span class="logo-text">BBS</span>
                 </a>
             </div>
@@ -32,7 +32,7 @@
                 <span></span>
             </button>
             <nav class="nav" id="mobileNav">
-                <a href="<?php echo base_url(); ?>" class="nav-link<?php echo (isset($action) && $action === 'list' && empty($forumId)) ? ' active' : ''; ?>">首页</a>
+                <a href="/" class="nav-link<?php echo (isset($action) && $action === 'list' && empty($forumId)) ? ' active' : ''; ?>">首页</a>
                 <a href="<?php echo base_url('index.php?module=post&action=create'); ?>" class="nav-link">发帖</a>
             </nav>
             <div class="user-nav">
