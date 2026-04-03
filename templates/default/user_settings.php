@@ -388,7 +388,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const avatarContainer = document.getElementById('avatar-container');
     const uploadProgress = document.getElementById('upload-progress');
     const progressFill = uploadProgress.querySelector('.progress-fill');
-    const defaultAvatarSvg = `<?php echo $user['avatar'] ? '' : trim(preg_replace('/\s+/', ' ', render_default_avatar($user['id'], $user['username'], 'xxlarge', 'avatar-default-preview'))); ?>`;
+    const defaultAvatarSvg = `<?php
+    if (empty($user['avatar'])) {
+        ob_start();
+        render_default_avatar($user['id'], $user['username'], 'xxlarge', 'avatar-default-preview');
+        $avatarSvg = ob_get_clean();
+        echo trim(preg_replace('/\s+/', ' ', $avatarSvg));
+    }
+    ?>`;
 
     avatarInput.addEventListener('change', function() {
         const file = this.files[0];
@@ -419,7 +426,19 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             body: formData
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('HTTP错误: ' + response.status);
+            }
+            return response.text().then(text => {
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.error('服务器返回:', text);
+                    throw new Error('服务器返回格式错误: ' + text.substring(0, 200));
+                }
+            });
+        })
         .then(data => {
             progressFill.style.width = '100%';
 
@@ -445,7 +464,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(error => {
-            alert('上传失败，请重试');
+            console.error('上传错误:', error);
+            alert('上传失败: ' + error.message);
             uploadProgress.style.display = 'none';
             progressFill.style.width = '0%';
             // 恢复原头像
