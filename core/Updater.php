@@ -14,6 +14,9 @@ class Updater {
     private $updateDir;
     private $backupDir;
     
+    // 最后HTTP错误
+    private $lastHttpError = null;
+    
     // 排除列表（更新时不覆盖）
     private $excludePaths = [
         // 用户数据目录
@@ -101,12 +104,20 @@ class Updater {
         $releaseInfo = $this->getLatestRelease();
 
         if (!$releaseInfo) {
+            $httpError = $this->getLastHttpError();
+            $errorMsg = '无法获取远程版本信息';
+            if ($httpError) {
+                $errorMsg .= '：' . $httpError;
+            } else {
+                $errorMsg .= '，请检查网络连接或服务器配置';
+            }
+            
             return [
                 'has_update' => false,
                 'local_version' => $localVersion,
                 'remote_version' => null,
                 'release_info' => null,
-                'error' => '无法获取远程版本信息，请检查网络连接'
+                'error' => $errorMsg
             ];
         }
 
@@ -386,25 +397,75 @@ class Updater {
      * @return string|false
      */
     private function httpGet($url) {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'HuBBS-Updater/' . HUBBS_VERSION);
+        // 记录最后错误
+        $lastError = null;
+        
+        // 方法1: 尝试使用 cURL
+        if (function_exists('curl_init')) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'HuBBS-Updater/' . HUBBS_VERSION);
 
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
-        curl_close($ch);
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
 
-        if ($httpCode !== 200 || $response === false) {
-            error_log("[HuBBS Updater] HTTP请求失败: URL={$url}, HTTPCode={$httpCode}, Error={$curlError}");
-            return false;
+            if ($httpCode === 200 && $response !== false) {
+                return $response;
+            }
+            
+            $lastError = "cURL请求失败: HTTP={$httpCode}, Error={$curlError}";
+            error_log("[HuBBS Updater] {$lastError}, URL={$url}");
+        } else {
+            $lastError = "cURL扩展未安装";
         }
-
-        return $response;
+        
+        // 方法2: 尝试使用 file_get_contents
+        if (ini_get('allow_url_fopen')) {
+            $context = stream_context_create([
+                'http' => [
+                    'timeout' => 30,
+                    'user_agent' => 'HuBBS-Updater/' . HUBBS_VERSION,
+                ],
+                'ssl' => [
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                ],
+            ]);
+            
+            $response = @file_get_contents($url, false, $context);
+            if ($response !== false) {
+                return $response;
+            }
+            
+            $lastError = "file_get_contents请求失败";
+            $error = error_get_last();
+            if ($error) {
+                $lastError .= ": " . ($error['message'] ?? '未知错误');
+            }
+            error_log("[HuBBS Updater] {$lastError}, URL={$url}");
+        } else {
+            $lastError = "allow_url_fopen已禁用";
+        }
+        
+        // 保存最后错误到类属性
+        $this->lastHttpError = $lastError;
+        
+        return false;
+    }
+    
+    /**
+     * 获取最后的HTTP错误信息
+     * @return string|null
+     */
+    public function getLastHttpError() {
+        return $this->lastHttpError ?? null;
     }
     
     /**
