@@ -5,11 +5,11 @@
 
 // 获取基础 URL
 function base_url($path = '') {
-    // 每次都重新计算，避免静态缓存导致的问题
-    $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+    // 使用 PHP_SELF 获取当前脚本路径，比 SCRIPT_NAME 更可靠
+    $phpSelf = $_SERVER['PHP_SELF'] ?? '';
     
-    // 从 SCRIPT_NAME 获取目录部分
-    $dir = dirname($scriptName);
+    // 获取目录部分
+    $dir = dirname($phpSelf);
     
     // 如果是根目录，使用空字符串
     if ($dir === '/' || $dir === '\\' || $dir === '.') {
