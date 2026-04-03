@@ -388,7 +388,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const avatarContainer = document.getElementById('avatar-container');
     const uploadProgress = document.getElementById('upload-progress');
     const progressFill = uploadProgress.querySelector('.progress-fill');
-    const defaultAvatarSvg = `<?php echo $user['avatar'] ? '' : trim(preg_replace('/\s+/', ' ', render_default_avatar($user['id'], $user['username'], 'xxlarge', 'avatar-default-preview'))); ?>`;
+    const defaultAvatarSvg = `<?php
+    if (empty($user['avatar'])) {
+        ob_start();
+        render_default_avatar($user['id'], $user['username'], 'xxlarge', 'avatar-default-preview');
+        $avatarSvg = ob_get_clean();
+        echo trim(preg_replace('/\s+/', ' ', $avatarSvg));
+    }
+    ?>`;
 
     avatarInput.addEventListener('change', function() {
         const file = this.files[0];
