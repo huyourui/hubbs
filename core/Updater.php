@@ -1,7 +1,7 @@
 <?php
 /**
  * HuBBS - 自动更新系统
- * 基于 Gitee 仓库实现自动检测和更新
+ * 基于 Gitee Release 检测版本，支持本地上传更新
  */
 
 class Updater {
@@ -51,7 +51,7 @@ class Updater {
                 'local_version' => $localVersion,
                 'remote_version' => null,
                 'release_info' => null,
-                'error' => '无法获取远程版本信息，请检查网络连接或 Gitee 仓库设置'
+                'error' => '无法获取远程版本信息，请检查网络连接'
             ];
         }
 
@@ -62,7 +62,7 @@ class Updater {
                 'local_version' => $localVersion,
                 'remote_version' => null,
                 'release_info' => null,
-                'error' => '远程版本信息格式错误：缺少 tag_name'
+                'error' => '远程版本信息格式错误'
             ];
         }
 
@@ -108,34 +108,13 @@ class Updater {
     }
     
     /**
-     * 下载更新包
+     * 获取 Gitee Release 下载页面链接
      * @param string $version 版本号
-     * @return array ['success' => bool, 'file' => string, 'error' => string]
+     * @return string
      */
-    public function downloadUpdate($version) {
-        // 构建下载 URL（使用 Gitee 的 zip 下载链接）
-        $downloadUrl = "https://gitee.com/{$this->repoOwner}/{$this->repoName}/repository/archive/{$version}";
-        
-        $fileName = "hubbs-{$version}.zip";
-        $filePath = $this->updateDir . $fileName;
-        
-        // 删除旧文件
-        if (file_exists($filePath)) {
-            unlink($filePath);
-        }
-        
-        // 下载文件
-        $content = $this->httpGet($downloadUrl);
-        if (!$content) {
-            return ['success' => false, 'error' => '下载更新包失败'];
-        }
-        
-        // 保存文件
-        if (file_put_contents($filePath, $content) === false) {
-            return ['success' => false, 'error' => '保存更新包失败'];
-        }
-        
-        return ['success' => true, 'file' => $filePath];
+    public function getReleasePageUrl($version) {
+        $tagName = (strpos($version, 'v') === 0) ? $version : 'v' . $version;
+        return "https://gitee.com/{$this->repoOwner}/{$this->repoName}/releases/{$tagName}";
     }
     
     /**
@@ -170,7 +149,7 @@ class Updater {
     }
     
     /**
-     * 执行更新
+     * 执行更新（从本地上传的ZIP文件）
      * @param string $zipFile 更新包路径
      * @return array ['success' => bool, 'message' => string]
      */
@@ -329,6 +308,24 @@ class Updater {
     }
     
     /**
+     * 删除指定备份
+     * @param string $backupName
+     * @return array
+     */
+    public function deleteBackup($backupName) {
+        $backupPath = $this->backupDir . $backupName . '/';
+        
+        if (!is_dir($backupPath)) {
+            return ['success' => false, 'message' => '备份不存在'];
+        }
+        
+        // 删除备份目录
+        $this->removeDirectory($backupPath);
+        
+        return ['success' => true, 'message' => '备份已删除'];
+    }
+    
+    /**
      * HTTP GET 请求
      * @param string $url
      * @return string|false
@@ -348,7 +345,6 @@ class Updater {
         curl_close($ch);
 
         if ($httpCode !== 200 || $response === false) {
-            // 记录错误日志
             error_log("[HuBBS Updater] HTTP请求失败: URL={$url}, HTTPCode={$httpCode}, Error={$curlError}");
             return false;
         }
