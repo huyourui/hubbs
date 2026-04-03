@@ -22,6 +22,8 @@ class Updater {
         'install.lock',
         '.git/',
         '.gitignore',
+        '.user.ini',
+        '.well-known/',
         'data/config.php',
     ];
     
