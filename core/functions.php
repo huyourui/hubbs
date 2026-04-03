@@ -5,26 +5,32 @@
 
 // 获取基础 URL
 function base_url($path = '') {
-    // 使用 PHP_SELF 获取当前脚本路径，比 SCRIPT_NAME 更可靠
-    $phpSelf = $_SERVER['PHP_SELF'] ?? '';
+    // 使用 HUBBS_ROOT 常量来推断基础路径
+    // HUBBS_ROOT 是文件的绝对路径，如 /Applications/XAMPP/xamppfiles/htdocs/hubbs/
+    $rootPath = HUBBS_ROOT;
     
-    // 获取目录部分
-    $dir = dirname($phpSelf);
+    // 获取 DOCUMENT_ROOT，如 /Applications/XAMPP/xamppfiles/htdocs
+    $docRoot = isset($_SERVER['DOCUMENT_ROOT']) ? $_SERVER['DOCUMENT_ROOT'] : '';
     
-    // 如果是根目录，使用空字符串
-    if ($dir === '/' || $dir === '\\' || $dir === '.') {
-        $baseUrl = '';
+    // 计算相对路径
+    if ($docRoot && strpos($rootPath, $docRoot) === 0) {
+        $basePath = substr($rootPath, strlen($docRoot));
+        $basePath = rtrim($basePath, '/');
     } else {
-        $baseUrl = $dir;
+        // 如果无法计算，使用 SCRIPT_NAME 作为后备
+        $scriptName = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '';
+        $dir = dirname($scriptName);
+        if ($dir === '/' || $dir === '\\' || $dir === '.') {
+            $basePath = '';
+        } else {
+            $basePath = rtrim($dir, '/');
+        }
     }
-    
-    // 确保不以斜杠结尾
-    $baseUrl = rtrim($baseUrl, '/');
     
     if ($path) {
-        return $baseUrl . '/' . ltrim($path, '/');
+        return $basePath . '/' . ltrim($path, '/');
     }
-    return $baseUrl;
+    return $basePath;
 }
 
 // 安全过滤
