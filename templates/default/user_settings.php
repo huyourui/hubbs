@@ -426,7 +426,19 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             body: formData
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('HTTP错误: ' + response.status);
+            }
+            return response.text().then(text => {
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.error('服务器返回:', text);
+                    throw new Error('服务器返回格式错误: ' + text.substring(0, 200));
+                }
+            });
+        })
         .then(data => {
             progressFill.style.width = '100%';
 
@@ -452,7 +464,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(error => {
-            alert('上传失败，请重试');
+            console.error('上传错误:', error);
+            alert('上传失败: ' + error.message);
             uploadProgress.style.display = 'none';
             progressFill.style.width = '0%';
             // 恢复原头像
