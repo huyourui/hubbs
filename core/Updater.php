@@ -409,7 +409,12 @@ class Updater {
             curl_setopt($ch, CURLOPT_TIMEOUT, 30);
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-            curl_setopt($ch, CURLOPT_USERAGENT, 'HuBBS-Updater/' . HUBBS_VERSION);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Accept: application/json',
+                'Accept-Language: zh-CN,zh;q=0.9,en;q=0.8',
+                'Cache-Control: no-cache',
+            ]);
 
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -431,7 +436,10 @@ class Updater {
             $context = stream_context_create([
                 'http' => [
                     'timeout' => 30,
-                    'user_agent' => 'HuBBS-Updater/' . HUBBS_VERSION,
+                    'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'header' => "Accept: application/json\r\n" .
+                                "Accept-Language: zh-CN,zh;q=0.9,en;q=0.8\r\n" .
+                                "Cache-Control: no-cache\r\n",
                 ],
                 'ssl' => [
                     'verify_peer' => false,
