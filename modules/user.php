@@ -597,15 +597,9 @@ class UserModule {
         $uploadDir = ROOT_DIR . '/uploads/avatars';
         if (!is_dir($uploadDir)) {
             if (!@mkdir($uploadDir, 0755, true)) {
-                echo json_encode(['success' => false, 'message' => '创建上传目录失败: ' . $uploadDir . ', 错误: ' . error_get_last()['message']]);
+                echo json_encode(['success' => false, 'message' => '创建上传目录失败']);
                 exit;
             }
-        }
-
-        // 检查目录是否可写
-        if (!is_writable($uploadDir)) {
-            echo json_encode(['success' => false, 'message' => '上传目录不可写: ' . $uploadDir]);
-            exit;
         }
 
         // 生成唯一文件名
@@ -672,13 +666,7 @@ class UserModule {
         imagedestroy($newImage);
 
         if (!$result) {
-            echo json_encode(['success' => false, 'message' => '图片保存失败: ' . $filePath]);
-            exit;
-        }
-
-        // 验证文件是否真正保存成功
-        if (!file_exists($filePath)) {
-            echo json_encode(['success' => false, 'message' => '图片保存后未找到: ' . $filePath]);
+            echo json_encode(['success' => false, 'message' => '图片保存失败']);
             exit;
         }
 
