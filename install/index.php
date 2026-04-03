@@ -63,14 +63,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ];
             
             try {
-                $dsn = "mysql:host={$config['host']};port={$config['port']};charset={$config['charset']}";
+                // 先不指定字符集连接，检测MySQL版本
+                $dsn = "mysql:host={$config['host']};port={$config['port']}";
                 $pdo = new PDO($dsn, $config['user'], $config['pass']);
                 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                 
-                // 创建数据库 - 使用反引号包裹标识符防止SQL注入
+                // 检测MySQL版本
+                $version = $pdo->query('SELECT VERSION()')->fetchColumn();
+                $versionNumber = floatval($version);
+                
+                // MySQL 5.5.3+ 支持 utf8mb4，否则使用 utf8
+                if ($versionNumber >= 5.5) {
+                    $charset = 'utf8mb4';
+                    $collate = 'utf8mb4_unicode_ci';
+                } else {
+                    $charset = 'utf8';
+                    $collate = 'utf8_unicode_ci';
+                }
+                
+                // 更新配置
+                $config['charset'] = $charset;
+                
+                // 创建数据库
                 $dbName = backquoteIdentifier($config['name']);
-                $charset = backquoteIdentifier($config['charset']);
-                $pdo->exec("CREATE DATABASE IF NOT EXISTS {$dbName} CHARACTER SET {$charset} COLLATE {$charset}_unicode_ci");
+                $charsetQuoted = backquoteIdentifier($charset);
+                $pdo->exec("CREATE DATABASE IF NOT EXISTS {$dbName} CHARACTER SET {$charsetQuoted} COLLATE {$collate}");
                 $pdo->exec("USE {$dbName}");
                 
                 // 创建表
