@@ -1,0 +1,42 @@
+# HuBBS Nginx 配置示例
+# 将此配置复制到您的nginx配置中，根据实际情况修改
+
+server {
+    listen 80;
+    server_name bbs.huyourui.com;  # 修改为您的域名或IP
+    root /www/wwwroot/bbs.huyourui.com;  # 修改为您的实际路径
+    index index.php index.html;
+
+    # 安装目录支持
+    location /install {
+        try_files $uri $uri/ /install/index.php?$query_string;
+    }
+
+    # 主入口
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    # PHP 处理
+    location ~ \.php$ {
+        fastcgi_pass 127.0.0.1:9000;  # 根据您的PHP-FPM配置修改
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+        
+        # 支持 Pathinfo
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        fastcgi_param PATH_INFO $fastcgi_path_info;
+    }
+
+    # 禁止访问敏感文件
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+
+    # 静态文件缓存
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+}
