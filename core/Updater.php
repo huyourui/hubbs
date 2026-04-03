@@ -18,6 +18,7 @@ class Updater {
     private $excludePaths = [
         'data/',
         'uploads/',
+        'install/',
         'install.lock',
         '.git/',
         '.gitignore',
