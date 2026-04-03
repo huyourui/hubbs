@@ -5,21 +5,22 @@
 
 // 获取基础 URL
 function base_url($path = '') {
-    static $baseUrl = null;
-    if ($baseUrl === null) {
-        // 获取当前脚本的路径
-        $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
-        // 获取目录部分
-        $dir = dirname($scriptName);
-        // 如果是根目录，使用空字符串
-        if ($dir === '/' || $dir === '\\') {
-            $baseUrl = '';
-        } else {
-            $baseUrl = $dir;
-        }
-        // 确保不以斜杠结尾
-        $baseUrl = rtrim($baseUrl, '/');
+    // 每次都重新计算，避免静态缓存导致的问题
+    $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+    
+    // 从 SCRIPT_NAME 获取目录部分
+    $dir = dirname($scriptName);
+    
+    // 如果是根目录，使用空字符串
+    if ($dir === '/' || $dir === '\\' || $dir === '.') {
+        $baseUrl = '';
+    } else {
+        $baseUrl = $dir;
     }
+    
+    // 确保不以斜杠结尾
+    $baseUrl = rtrim($baseUrl, '/');
+    
     if ($path) {
         return $baseUrl . '/' . ltrim($path, '/');
     }
