@@ -146,9 +146,6 @@ function createTables($pdo, $config) {
     $engine = backquoteIdentifier($config['engine']);
     $charset = backquoteIdentifier($config['charset']);
     
-    // 开始事务
-    $pdo->beginTransaction();
-    
     // 禁用外键检查，避免删除表时因外键约束而失败
     $pdo->exec("SET FOREIGN_KEY_CHECKS = 0");
     
@@ -445,9 +442,6 @@ function createTables($pdo, $config) {
     
     // 记录迁移版本（安装时已完成所有迁移）
     $pdo->exec("INSERT INTO {$prefix}migrations (version, executed_at) VALUES (20, NOW())");
-    
-    // 提交事务
-    $pdo->commit();
 }
 
 function saveConfig($config, $salt) {
