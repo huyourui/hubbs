@@ -7,8 +7,10 @@
 # 上传文件目录
 /uploads/images/*
 /uploads/attachments/*
+/uploads/avatars/*
 !/uploads/images/.gitkeep
 !/uploads/attachments/.gitkeep
+!/uploads/avatars/.gitkeep
 
 # 备份文件
 *.bak
@@ -34,9 +36,41 @@
 # Composer 依赖
 /vendor/
 
-# 测试文件
+# 测试相关
+/tests/
 /.phpunit.cache/
+phpunit.xml
+phpunit.xml.dist
 
 # 临时文件
 /tmp/*
 !/tmp/.gitkeep
+
+# 服务器环境特定文件
+.user.ini
+.htaccess
+.well-known/
+
+# 调试和测试文件
+debug_header.php
+debug_url.php
+test.php
+test_download.php
+
+# 环境配置
+.env
+.env.local
+.env.example
+
+# Node.js
+node_modules/
+package.json
+package-lock.json
+yarn.lock
+
+# 编辑器配置
+.editorconfig
+
+# 其他
+*.tmp
+*.temp

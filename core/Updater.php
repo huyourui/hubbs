@@ -16,13 +16,67 @@ class Updater {
     
     // 排除列表（更新时不覆盖）
     private $excludePaths = [
+        // 用户数据目录
         'data/',
         'uploads/',
+        
+        // 安装相关
         'install/',
         'install.lock',
+        
+        // 版本控制
         '.git/',
         '.gitignore',
-        'data/config.php',
+        '.gitattributes',
+        
+        // 服务器环境文件
+        '.user.ini',
+        '.htaccess',
+        '.well-known/',
+        
+        // 运行时目录
+        'cache/',
+        'logs/',
+        'tmp/',
+        
+        // IDE和编辑器配置
+        '.idea/',
+        '.vscode/',
+        '.DS_Store',
+        '.editorconfig',
+        
+        // Composer依赖
+        'vendor/',
+        'composer.json',
+        'composer.lock',
+        
+        // Node.js依赖
+        'node_modules/',
+        'package.json',
+        'package-lock.json',
+        'yarn.lock',
+        
+        // 测试相关
+        'tests/',
+        '.phpunit.cache/',
+        'phpunit.xml',
+        'phpunit.xml.dist',
+        
+        // 调试和测试文件
+        'debug_header.php',
+        'debug_url.php',
+        'test.php',
+        'test_download.php',
+        
+        // 环境配置
+        '.env',
+        '.env.example',
+        '.env.local',
+        
+        // 其他
+        'LICENSE',
+        'CONTRIBUTING.md',
+        'CHANGELOG.md',
     ];
     
     public function __construct() {
