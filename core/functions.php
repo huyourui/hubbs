@@ -5,27 +5,22 @@
 
 // 获取基础 URL
 function base_url($path = '') {
-    // 使用 HUBBS_ROOT 常量来推断基础路径
-    // HUBBS_ROOT 是文件的绝对路径，如 /Applications/XAMPP/xamppfiles/htdocs/hubbs/
-    $rootPath = HUBBS_ROOT;
+    // 使用 SCRIPT_NAME 获取基础路径
+    // SCRIPT_NAME 始终是入口文件的路径，如 /hubbs/index.php
+    $scriptName = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '';
     
-    // 获取 DOCUMENT_ROOT，如 /Applications/XAMPP/xamppfiles/htdocs
-    $docRoot = isset($_SERVER['DOCUMENT_ROOT']) ? $_SERVER['DOCUMENT_ROOT'] : '';
-    
-    // 计算相对路径
-    if ($docRoot && strpos($rootPath, $docRoot) === 0) {
-        $basePath = substr($rootPath, strlen($docRoot));
-        $basePath = rtrim($basePath, '/');
-    } else {
-        // 如果无法计算，使用 SCRIPT_NAME 作为后备
-        $scriptName = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '';
-        $dir = dirname($scriptName);
-        if ($dir === '/' || $dir === '\\' || $dir === '.') {
-            $basePath = '';
-        } else {
-            $basePath = rtrim($dir, '/');
+    // 获取目录部分
+    $basePath = '';
+    if (!empty($scriptName)) {
+        // 找到最后一个 / 的位置
+        $lastSlash = strrpos($scriptName, '/');
+        if ($lastSlash !== false) {
+            $basePath = substr($scriptName, 0, $lastSlash);
         }
     }
+    
+    // 确保不以斜杠结尾（根目录除外）
+    $basePath = rtrim($basePath, '/');
     
     if ($path) {
         return $basePath . '/' . ltrim($path, '/');
