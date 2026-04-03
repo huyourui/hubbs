@@ -470,10 +470,20 @@ function saveConfig($config, $salt) {
     // 创建data目录
     $dataDir = HUBBS_ROOT . 'data';
     if (!is_dir($dataDir)) {
-        mkdir($dataDir, 0755, true);
+        if (!@mkdir($dataDir, 0755, true)) {
+            throw new Exception('无法创建 data 目录，请检查权限');
+        }
     }
     
-    file_put_contents($dataDir . '/config.php', $content);
+    // 检查目录是否可写
+    if (!is_writable($dataDir)) {
+        throw new Exception('data 目录不可写，请检查权限');
+    }
+    
+    $configFile = $dataDir . '/config.php';
+    if (file_put_contents($configFile, $content) === false) {
+        throw new Exception('无法写入配置文件，请检查权限');
+    }
 }
 
 /**
@@ -654,16 +664,60 @@ function decryptData($data, $key) {
         <?php endif; ?>
         
         <?php if ($step == 1): ?>
+        <?php
+        // 环境检测
+        $phpVersionOk = version_compare(PHP_VERSION, '7.4.0', '>=');
+        $pdoOk = extension_loaded('pdo');
+        $pdoMysqlOk = extension_loaded('pdo_mysql');
+        $gdOk = extension_loaded('gd');
+        $opensslOk = extension_loaded('openssl');
+        $mbstringOk = extension_loaded('mbstring');
+        
+        // 检查必要目录权限
+        $dataDir = HUBBS_ROOT . 'data';
+        $uploadsDir = HUBBS_ROOT . 'uploads';
+        
+        // 如果目录不存在，检查父目录是否可写
+        $dataWritable = is_dir($dataDir) ? is_writable($dataDir) : is_writable(HUBBS_ROOT);
+        $uploadsWritable = is_dir($uploadsDir) ? is_writable($uploadsDir) : is_writable(HUBBS_ROOT);
+        
+        $allOk = $phpVersionOk && $pdoOk && $pdoMysqlOk && $gdOk && $opensslOk && $mbstringOk && $dataWritable && $uploadsWritable;
+        ?>
         <form method="get">
             <input type="hidden" name="step" value="2">
             <h3 style="margin-bottom: 20px; color: #333;">环境检测</h3>
             <div style="margin-bottom: 20px; font-size: 14px; color: #666;">
-                <p>✓ PHP 版本: <?php echo PHP_VERSION; ?> (需要 7.4+)</p>
-                <p>✓ PDO 扩展: <?php echo extension_loaded('pdo') ? '已安装' : '未安装'; ?></p>
-                <p>✓ PDO_MySQL: <?php echo extension_loaded('pdo_mysql') ? '已安装' : '未安装'; ?></p>
-                <p>✓ 目录可写: <?php echo is_writable(HUBBS_ROOT) ? '是' : '否'; ?></p>
+                <p style="color: <?php echo $phpVersionOk ? '#4caf50' : '#f44336'; ?>;">
+                    <?php echo $phpVersionOk ? '✓' : '✗'; ?> PHP 版本: <?php echo PHP_VERSION; ?> (需要 7.4+)
+                </p>
+                <p style="color: <?php echo $pdoOk ? '#4caf50' : '#f44336'; ?>;">
+                    <?php echo $pdoOk ? '✓' : '✗'; ?> PDO 扩展: <?php echo $pdoOk ? '已安装' : '未安装'; ?>
+                </p>
+                <p style="color: <?php echo $pdoMysqlOk ? '#4caf50' : '#f44336'; ?>;">
+                    <?php echo $pdoMysqlOk ? '✓' : '✗'; ?> PDO_MySQL: <?php echo $pdoMysqlOk ? '已安装' : '未安装'; ?>
+                </p>
+                <p style="color: <?php echo $gdOk ? '#4caf50' : '#f44336'; ?>;">
+                    <?php echo $gdOk ? '✓' : '✗'; ?> GD 扩展: <?php echo $gdOk ? '已安装' : '未安装'; ?> (头像处理需要)
+                </p>
+                <p style="color: <?php echo $opensslOk ? '#4caf50' : '#f44336'; ?>;">
+                    <?php echo $opensslOk ? '✓' : '✗'; ?> OpenSSL 扩展: <?php echo $opensslOk ? '已安装' : '未安装'; ?> (密码加密需要)
+                </p>
+                <p style="color: <?php echo $mbstringOk ? '#4caf50' : '#f44336'; ?>;">
+                    <?php echo $mbstringOk ? '✓' : '✗'; ?> MBString 扩展: <?php echo $mbstringOk ? '已安装' : '未安装'; ?>
+                </p>
+                <p style="color: <?php echo $dataWritable ? '#4caf50' : '#f44336'; ?>;">
+                    <?php echo $dataWritable ? '✓' : '✗'; ?> data 目录可写: <?php echo $dataWritable ? '是' : '否'; ?>
+                </p>
+                <p style="color: <?php echo $uploadsWritable ? '#4caf50' : '#f44336'; ?>;">
+                    <?php echo $uploadsWritable ? '✓' : '✗'; ?> uploads 目录可写: <?php echo $uploadsWritable ? '是' : '否'; ?>
+                </p>
             </div>
-            <button type="submit" class="btn">下一步</button>
+            <?php if (!$allOk): ?>
+            <div style="margin-bottom: 20px; padding: 10px; background: #ffebee; border-radius: 4px; font-size: 13px; color: #c62828;">
+                <strong>环境不满足要求！</strong>请先解决上述问题后再进行安装。
+            </div>
+            <?php endif; ?>
+            <button type="submit" class="btn" <?php echo $allOk ? '' : 'disabled style="background:#ccc;cursor:not-allowed;"'; ?>>下一步</button>
         </form>
         
         <?php elseif ($step == 2): ?>
@@ -727,12 +781,22 @@ function decryptData($data, $key) {
         </form>
         
         <?php elseif ($step == 3): ?>
+        <?php
+        // 计算正确的URL路径
+        $scriptName = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '';
+        $basePath = dirname(dirname($scriptName));
+        if ($basePath === '/' || $basePath === '\\' || $basePath === '.') {
+            $basePath = '';
+        }
+        $homeUrl = $basePath . '/index.php';
+        $loginUrl = $basePath . '/index.php?module=user&action=login';
+        ?>
         <div class="success-icon">✓</div>
         <div class="success-text">
             <p>恭喜！HuBBS 安装成功！</p>
             <p style="margin-top: 10px; font-size: 14px; color: #666;">
-                <a href="../index.php" style="color: #ff6b6b;">访问首页</a> | 
-                <a href="../index.php?module=user&action=login" style="color: #ff6b6b;">登录后台</a>
+                <a href="<?php echo htmlspecialchars($homeUrl); ?>" style="color: #ff6b6b;">访问首页</a> | 
+                <a href="<?php echo htmlspecialchars($loginUrl); ?>" style="color: #ff6b6b;">登录后台</a>
             </p>
         </div>
         <?php endif; ?>
