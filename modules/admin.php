@@ -1321,6 +1321,12 @@ class AdminModule {
         $writable = $updater->checkWritable();
         $backups = $updater->getBackups();
         
+        // 获取Release页面链接
+        $releasePageUrl = '';
+        if (!empty($checkResult['remote_version'])) {
+            $releasePageUrl = $updater->getReleasePageUrl($checkResult['remote_version']);
+        }
+        
         return [
             'template' => 'admin_update',
             'data' => [
@@ -1333,6 +1339,7 @@ class AdminModule {
                 'error' => $error,
                 'success' => $success,
                 'checkResult' => $checkResult,
+                'releasePageUrl' => $releasePageUrl,
             ]
         ];
     }

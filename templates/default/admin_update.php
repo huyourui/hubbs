@@ -74,17 +74,26 @@ include __DIR__ . '/admin_header.php';
         <!-- 更新操作 -->
         <div class="update-actions">
             <?php if ($writable['writable']): ?>
-                <form method="post" class="update-form" onsubmit="return confirmUpdate();">
-                    <?php csrf_field(); ?>
-                    <input type="hidden" name="action" value="update">
-                    <button type="submit" class="btn-primary btn-large" id="update-btn">
-                        <span class="btn-text">立即更新</span>
-                        <span class="btn-loading" style="display: none;">更新中...</span>
-                    </button>
-                </form>
-                <p class="update-tip">
-                    💡 如果自动更新失败，可以<a href="https://gitee.com/youruihu/hubbs/releases" target="_blank">手动下载</a>后使用下方上传功能
-                </p>
+                <div class="update-notice">
+                    <div class="notice-icon">ℹ️</div>
+                    <div class="notice-content">
+                        <p><strong>自动更新说明：</strong></p>
+                        <p>由于 Gitee 开启了机器验证，程序无法自动下载更新包。</p>
+                        <p>请按照以下步骤手动更新：</p>
+                        <ol>
+                            <li>点击下方按钮访问 Gitee Release 页面</li>
+                            <li>下载对应版本的 <strong>Source code (zip)</strong></li>
+                            <li>在下方"手动上传更新"区域上传 ZIP 文件</li>
+                            <li>点击"上传并更新"完成升级</li>
+                        </ol>
+                    </div>
+                </div>
+                
+                <div class="update-buttons">
+                    <a href="<?php echo $releasePageUrl; ?>" target="_blank" class="btn-primary btn-large">
+                        📥 前往 Gitee 下载 v<?php e($remoteVersion); ?>
+                    </a>
+                </div>
             <?php else: ?>
                 <div class="writable-warning">
                     <h4>⚠️ 无法更新，请检查以下问题：</h4>
@@ -101,8 +110,7 @@ include __DIR__ . '/admin_header.php';
         <div class="upload-section">
             <h3>手动上传更新</h3>
             <p class="upload-desc">
-                如果自动更新失败，请从 <a href="https://gitee.com/youruihu/hubbs/releases" target="_blank">Gitee Release 页面</a> 
-                手动下载更新包（Source code (zip)），然后在此上传。
+                下载更新包后，在此上传并自动完成升级。
             </p>
             <form method="post" enctype="multipart/form-data" class="upload-form">
                 <?php csrf_field(); ?>
@@ -311,7 +319,45 @@ include __DIR__ . '/admin_header.php';
 
 /* 更新操作 */
 .update-actions {
-    margin-bottom: 30px;
+    margin: 30px 0;
+}
+
+.update-notice {
+    background: #e6f7ff;
+    border: 1px solid #91d5ff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 15px;
+}
+
+.notice-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.notice-content {
+    flex: 1;
+}
+
+.notice-content p {
+    margin: 0 0 10px 0;
+    line-height: 1.6;
+}
+
+.notice-content ol {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.notice-content li {
+    margin: 5px 0;
+}
+
+.update-buttons {
+    text-align: center;
+    margin: 20px 0;
 }
 
 .btn-large {
