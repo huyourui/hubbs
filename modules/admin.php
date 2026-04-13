@@ -1095,7 +1095,6 @@ class AdminModule {
         $db = DB::getInstance();
         $id = intval($_GET['id'] ?? 0);
         $error = '';
-        $success = '';
         
         $link = $db->fetch("SELECT * FROM {$db->table('links')} WHERE id = ? LIMIT 1", [$id]);
         if (!$link) {
@@ -1126,9 +1125,8 @@ class AdminModule {
                     'updated_at' => date('Y-m-d H:i:s')
                 ], 'id = ?', [$id]);
                 
-                $success = '友情链接更新成功';
-                // 重新获取数据
-                $link = $db->fetch("SELECT * FROM {$db->table('links')} WHERE id = ? LIMIT 1", [$id]);
+                set_message('友情链接更新成功', 'success');
+                redirect('index.php?module=admin&action=links');
             }
         }
         
@@ -1136,8 +1134,7 @@ class AdminModule {
             'template' => 'admin_link_form',
             'data' => [
                 'link' => $link,
-                'error' => $error,
-                'success' => $success
+                'error' => $error
             ]
         ];
     }

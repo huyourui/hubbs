@@ -3,6 +3,7 @@
  * HuBBS - 后台友情链接表单
  */
 $pageTitle = $link ? '编辑友情链接' : '添加友情链接';
+$action = 'links';
 include __DIR__ . '/admin_header.php';
 ?>
 
