@@ -5,24 +5,45 @@
 
 // 获取基础 URL
 function base_url($path = '') {
-    // 使用 HUBBS_ROOT 常量计算基础路径
-    // HUBBS_ROOT 是文件系统路径，需要转换为 URL 路径
-    $rootPath = HUBBS_ROOT;
+    // 方案1：尝试使用 REQUEST_URI 和 PHP_SELF 来推断
+    // 这种方法不依赖 DOCUMENT_ROOT，更适合各种服务器配置
     
-    // 获取网站根目录的文件系统路径
-    $docRoot = isset($_SERVER['DOCUMENT_ROOT']) ? $_SERVER['DOCUMENT_ROOT'] : '';
+    $requestUri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+    $phpSelf = isset($_SERVER['PHP_SELF']) ? $_SERVER['PHP_SELF'] : '';
+    $scriptName = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '';
     
-    // 计算相对路径
+    // 优先使用 SCRIPT_NAME，如果为空则使用 PHP_SELF
+    $entryScript = !empty($scriptName) ? $scriptName : $phpSelf;
+    
+    // 获取入口脚本所在的目录
     $basePath = '';
-    if (!empty($docRoot) && strpos($rootPath, $docRoot) === 0) {
-        // 从根目录中移除 DOCUMENT_ROOT 部分，得到 URL 路径
-        $basePath = substr($rootPath, strlen($docRoot));
+    if (!empty($entryScript)) {
+        // 找到最后一个 / 的位置
+        $lastSlash = strrpos($entryScript, '/');
+        if ($lastSlash !== false) {
+            $basePath = substr($entryScript, 0, $lastSlash);
+        }
     }
     
-    // 统一使用正斜杠
-    $basePath = str_replace('\\', '/', $basePath);
+    // 如果上述方法失败，尝试使用 HUBBS_ROOT 和 DOCUMENT_ROOT
+    if (empty($basePath)) {
+        $rootPath = HUBBS_ROOT;
+        $docRoot = isset($_SERVER['DOCUMENT_ROOT']) ? $_SERVER['DOCUMENT_ROOT'] : '';
+        
+        if (!empty($docRoot)) {
+            // 规范化路径分隔符
+            $rootPath = str_replace('\\', '/', $rootPath);
+            $docRoot = str_replace('\\', '/', $docRoot);
+            
+            // 移除 DOCUMENT_ROOT 部分
+            if (strpos($rootPath, $docRoot) === 0) {
+                $basePath = substr($rootPath, strlen($docRoot));
+            }
+        }
+    }
     
-    // 确保不以斜杠结尾（根目录除外）
+    // 统一使用正斜杠并去除末尾斜杠
+    $basePath = str_replace('\\', '/', $basePath);
     $basePath = rtrim($basePath, '/');
     
     if ($path) {
