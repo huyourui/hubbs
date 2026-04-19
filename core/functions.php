@@ -5,19 +5,22 @@
 
 // 获取基础 URL
 function base_url($path = '') {
-    // 使用 SCRIPT_NAME 获取基础路径
-    // SCRIPT_NAME 始终是入口文件的路径，如 /hubbs/index.php
-    $scriptName = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '';
+    // 使用 HUBBS_ROOT 常量计算基础路径
+    // HUBBS_ROOT 是文件系统路径，需要转换为 URL 路径
+    $rootPath = HUBBS_ROOT;
     
-    // 获取目录部分
+    // 获取网站根目录的文件系统路径
+    $docRoot = isset($_SERVER['DOCUMENT_ROOT']) ? $_SERVER['DOCUMENT_ROOT'] : '';
+    
+    // 计算相对路径
     $basePath = '';
-    if (!empty($scriptName)) {
-        // 找到最后一个 / 的位置
-        $lastSlash = strrpos($scriptName, '/');
-        if ($lastSlash !== false) {
-            $basePath = substr($scriptName, 0, $lastSlash);
-        }
+    if (!empty($docRoot) && strpos($rootPath, $docRoot) === 0) {
+        // 从根目录中移除 DOCUMENT_ROOT 部分，得到 URL 路径
+        $basePath = substr($rootPath, strlen($docRoot));
     }
+    
+    // 统一使用正斜杠
+    $basePath = str_replace('\\', '/', $basePath);
     
     // 确保不以斜杠结尾（根目录除外）
     $basePath = rtrim($basePath, '/');
