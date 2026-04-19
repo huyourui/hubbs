@@ -69,6 +69,15 @@ function autoloadApi($class) {
 }
 spl_autoload_register('autoloadApi');
 
+// ==================== 加载服务层 ====================
+function autoloadServices($class) {
+    $serviceFile = HUBBS_ROOT . 'services/' . $class . '.php';
+    if (file_exists($serviceFile)) {
+        require_once $serviceFile;
+    }
+}
+spl_autoload_register('autoloadServices');
+
 // ==================== 执行数据库迁移（无感） ====================
 Migrate::run();
 
