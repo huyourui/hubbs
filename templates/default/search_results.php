@@ -64,7 +64,7 @@ include __DIR__ . '/header.php';
                     
                     <div class="result-meta">
                         <span class="meta-item">
-                            <img src="<?php echo get_avatar_url($post['user_id'], $post['avatar']); ?>" alt="" class="meta-avatar">
+                            <img src="<?php echo get_avatar_url($post['avatar'], $post['user_id'], $post['username']); ?>" alt="" class="meta-avatar">
                             <?php e($post['username']); ?>
                         </span>
                         <?php if (!empty($post['forum_name'])): ?>
