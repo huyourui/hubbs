@@ -5,6 +5,18 @@
 
 // 获取基础 URL
 function base_url($path = '') {
+    // 优先使用后台设置的网站URL
+    if (function_exists('Settings::get')) {
+        $siteUrl = Settings::get('site_url', '');
+        if (!empty($siteUrl)) {
+            $siteUrl = rtrim($siteUrl, '/');
+            if ($path) {
+                return $siteUrl . '/' . ltrim($path, '/');
+            }
+            return $siteUrl;
+        }
+    }
+    
     // 使用 SCRIPT_FILENAME 和 DOCUMENT_ROOT 计算
     // 这是最可靠的方法，因为 SCRIPT_FILENAME 总是指向实际的 index.php 文件
     

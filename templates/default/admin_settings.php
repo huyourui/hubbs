@@ -53,6 +53,12 @@ include __DIR__ . '/admin_header.php';
                 <input type="text" name="site_copyright" value="<?php e($settings['site_copyright'] ?? 'HuBBS - 开源论坛程序 v' . HUBBS_VERSION); ?>">
                 <span class="form-hint">网站底部版权信息，如：HuBBS - 开源论坛程序 v<?php echo HUBBS_VERSION; ?></span>
             </div>
+            
+            <div class="form-group">
+                <label>网站URL</label>
+                <input type="url" name="site_url" value="<?php e($settings['site_url'] ?? ''); ?>" placeholder="https://example.com">
+                <span class="form-hint">网站完整URL地址，留空则自动检测（用于首页链接、Logo链接等）</span>
+            </div>
         </div>
         
         <div class="settings-section">

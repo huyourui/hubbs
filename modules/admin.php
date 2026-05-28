@@ -839,6 +839,7 @@ class AdminModule {
                     'site_keywords' => trim($_POST['site_keywords'] ?? ''),
                     'site_description' => trim($_POST['site_description'] ?? ''),
                     'site_copyright' => trim($_POST['site_copyright'] ?? ''),
+                    'site_url' => trim($_POST['site_url'] ?? ''),
                     'enable_register' => isset($_POST['enable_register']) ? '1' : '0',
                     'is_force_forum' => isset($_POST['is_force_forum']) ? '1' : '0',
                     'register_email_suffix' => trim($_POST['register_email_suffix'] ?? ''),
