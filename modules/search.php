@@ -89,14 +89,13 @@ class SearchModule {
         
         // 构建 MATCH AGAINST 查询
         $matchFields = implode(', ', $searchFields);
-        $matchAgainst = "MATCH({$matchFields}) AGAINST(:keyword IN BOOLEAN MODE)";
         
-        // 查询总数
+        // 查询总数 - 使用 ? 占位符
         $countSql = "SELECT COUNT(*) as total 
                      FROM {$db->table('posts')} p 
-                     WHERE {$matchAgainst}";
+                     WHERE MATCH({$matchFields}) AGAINST(? IN BOOLEAN MODE)";
         
-        $countResult = $db->fetch($countSql, [':keyword' => $keyword]);
+        $countResult = $db->fetch($countSql, [$keyword]);
         $total = (int) ($countResult['total'] ?? 0);
         
         // 如果没有全文索引匹配结果，使用 LIKE 模糊查询作为备选
@@ -104,17 +103,17 @@ class SearchModule {
             return $this->performFallbackSearch($keyword, $type, $page, $perPage);
         }
         
-        // 查询结果
+        // 查询结果 - 使用 ? 占位符
         $sql = "SELECT p.*, u.username, u.avatar, f.name as forum_name,
-                       {$matchAgainst} as relevance
+                       MATCH({$matchFields}) AGAINST(? IN BOOLEAN MODE) as relevance
                 FROM {$db->table('posts')} p 
                 LEFT JOIN {$db->table('users')} u ON p.user_id = u.id 
                 LEFT JOIN {$db->table('forums')} f ON p.forum_id = f.id 
-                WHERE {$matchAgainst} 
+                WHERE MATCH({$matchFields}) AGAINST(? IN BOOLEAN MODE)
                 ORDER BY relevance DESC, p.created_at DESC
                 LIMIT {$offset}, {$perPage}";
         
-        $results = $db->fetchAll($sql, [':keyword' => $keyword]);
+        $results = $db->fetchAll($sql, [$keyword, $keyword]);
         
         // 处理搜索结果，高亮关键词
         foreach ($results as &$result) {
@@ -151,15 +150,15 @@ class SearchModule {
         
         $whereClause = implode(' AND ', $conditions);
         
-        // 查询总数
+        // 查询总数 - 使用 ? 占位符
         $countSql = "SELECT COUNT(*) as total 
                      FROM {$db->table('posts')} p 
                      WHERE {$whereClause}";
         
-        $countResult = $db->fetch($countSql, [':keyword' => $likeKeyword]);
+        $countResult = $db->fetch($countSql, [$likeKeyword]);
         $total = (int) ($countResult['total'] ?? 0);
         
-        // 查询结果
+        // 查询结果 - 使用 ? 占位符
         $sql = "SELECT p.*, u.username, u.avatar, f.name as forum_name
                 FROM {$db->table('posts')} p 
                 LEFT JOIN {$db->table('users')} u ON p.user_id = u.id 
@@ -168,7 +167,7 @@ class SearchModule {
                 ORDER BY p.created_at DESC
                 LIMIT {$offset}, {$perPage}";
         
-        $results = $db->fetchAll($sql, [':keyword' => $likeKeyword]);
+        $results = $db->fetchAll($sql, [$likeKeyword]);
         
         // 处理搜索结果
         foreach ($results as &$result) {
