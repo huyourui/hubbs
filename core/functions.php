@@ -6,14 +6,21 @@
 // 获取基础 URL
 function base_url($path = '') {
     // 优先使用后台设置的网站URL
-    if (function_exists('Settings::get')) {
-        $siteUrl = Settings::get('site_url', '');
-        if (!empty($siteUrl)) {
-            $siteUrl = rtrim($siteUrl, '/');
-            if ($path) {
-                return $siteUrl . '/' . ltrim($path, '/');
+    // 使用 class_exists 和 method_exists 检查 Settings 类
+    if (class_exists('Settings') && method_exists('Settings', 'get')) {
+        try {
+            $siteUrl = @Settings::get('site_url', '');
+            if (!empty($siteUrl)) {
+                $siteUrl = rtrim($siteUrl, '/');
+                if ($path) {
+                    return $siteUrl . '/' . ltrim($path, '/');
+                }
+                return $siteUrl;
             }
-            return $siteUrl;
+        } catch (Exception $e) {
+            // 如果 Settings 类出错，继续执行自动检测
+        } catch (Throwable $e) {
+            // 捕获 PHP7+ 的错误
         }
     }
     
