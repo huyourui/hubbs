@@ -137,14 +137,14 @@ class SearchModule {
         
         switch ($type) {
             case 'title':
-                $conditions[] = "p.title LIKE :keyword";
+                $conditions[] = "p.title LIKE ?";
                 break;
             case 'content':
-                $conditions[] = "p.content LIKE :keyword";
+                $conditions[] = "p.content LIKE ?";
                 break;
             case 'all':
             default:
-                $conditions[] = "(p.title LIKE :keyword OR p.content LIKE :keyword)";
+                $conditions[] = "(p.title LIKE ? OR p.content LIKE ?)";
                 break;
         }
         
@@ -155,7 +155,9 @@ class SearchModule {
                      FROM {$db->table('posts')} p 
                      WHERE {$whereClause}";
         
-        $countResult = $db->fetch($countSql, [$likeKeyword]);
+        // 根据条件数量准备参数
+        $countParams = ($type === 'all') ? [$likeKeyword, $likeKeyword] : [$likeKeyword];
+        $countResult = $db->fetch($countSql, $countParams);
         $total = (int) ($countResult['total'] ?? 0);
         
         // 查询结果 - 使用 ? 占位符
@@ -167,7 +169,9 @@ class SearchModule {
                 ORDER BY p.created_at DESC
                 LIMIT {$offset}, {$perPage}";
         
-        $results = $db->fetchAll($sql, [$likeKeyword]);
+        // 根据条件数量准备参数
+        $queryParams = ($type === 'all') ? [$likeKeyword, $likeKeyword] : [$likeKeyword];
+        $results = $db->fetchAll($sql, $queryParams);
         
         // 处理搜索结果
         foreach ($results as &$result) {
