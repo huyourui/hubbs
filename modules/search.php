@@ -94,8 +94,7 @@ class SearchModule {
         // 查询总数
         $countSql = "SELECT COUNT(*) as total 
                      FROM {$db->table('posts')} p 
-                     WHERE {$matchAgainst} 
-                     AND p.deleted_at IS NULL";
+                     WHERE {$matchAgainst}";
         
         $countResult = $db->fetch($countSql, [':keyword' => $keyword]);
         $total = (int) ($countResult['total'] ?? 0);
@@ -112,7 +111,6 @@ class SearchModule {
                 LEFT JOIN {$db->table('users')} u ON p.user_id = u.id 
                 LEFT JOIN {$db->table('forums')} f ON p.forum_id = f.id 
                 WHERE {$matchAgainst} 
-                AND p.deleted_at IS NULL
                 ORDER BY relevance DESC, p.created_at DESC
                 LIMIT {$offset}, {$perPage}";
         
@@ -156,8 +154,7 @@ class SearchModule {
         // 查询总数
         $countSql = "SELECT COUNT(*) as total 
                      FROM {$db->table('posts')} p 
-                     WHERE {$whereClause} 
-                     AND p.deleted_at IS NULL";
+                     WHERE {$whereClause}";
         
         $countResult = $db->fetch($countSql, [':keyword' => $likeKeyword]);
         $total = (int) ($countResult['total'] ?? 0);
@@ -168,7 +165,6 @@ class SearchModule {
                 LEFT JOIN {$db->table('users')} u ON p.user_id = u.id 
                 LEFT JOIN {$db->table('forums')} f ON p.forum_id = f.id 
                 WHERE {$whereClause} 
-                AND p.deleted_at IS NULL
                 ORDER BY p.created_at DESC
                 LIMIT {$offset}, {$perPage}";
         
