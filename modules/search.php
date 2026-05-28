@@ -9,6 +9,13 @@
 class SearchModule {
     
     /**
+     * 路由处理器
+     */
+    public function handle($action = 'index') {
+        return $this->index();
+    }
+    
+    /**
      * 执行搜索
      */
     public function index() {
