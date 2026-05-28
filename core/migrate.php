@@ -5,7 +5,7 @@
  */
 
 class Migrate {
-    private static $version = 20;
+    private static $version = 21;
     
     public static function run() {
         $db = DB::getInstance();
@@ -655,6 +655,37 @@ class Migrate {
             if (!self::columnExists($db, 'users', 'bio')) {
                 $db->query("ALTER TABLE {$db->table('users')} ADD COLUMN bio TEXT DEFAULT NULL COMMENT '个人介绍' AFTER avatar");
             }
+        }
+    }
+    
+    /**
+     * 迁移21：为搜索功能添加全文索引
+     */
+    private static function migrate21($db) {
+        // 为 posts 表添加全文索引
+        if (self::tableExists($db, 'posts')) {
+            // 检查是否已存在全文索引
+            try {
+                $db->query("ALTER TABLE {$db->table('posts')} ADD FULLTEXT INDEX ft_title_content (title, content)");
+            } catch (Exception $e) {
+                // 索引可能已存在，忽略错误
+            }
+        }
+        
+        // 创建搜索日志表
+        if (!self::tableExists($db, 'search_logs')) {
+            $sql = "CREATE TABLE IF NOT EXISTS {$db->table('search_logs')} (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                keyword VARCHAR(255) NOT NULL COMMENT '搜索关键词',
+                user_id INT UNSIGNED DEFAULT 0 COMMENT '用户ID',
+                ip VARCHAR(45) DEFAULT NULL COMMENT 'IP地址',
+                results_count INT UNSIGNED DEFAULT 0 COMMENT '结果数量',
+                created_at DATETIME NOT NULL,
+                PRIMARY KEY (id),
+                KEY idx_keyword (keyword),
+                KEY idx_created_at (created_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+            $db->query($sql);
         }
     }
 }

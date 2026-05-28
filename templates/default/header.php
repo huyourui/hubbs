@@ -15,7 +15,69 @@
     <meta name="description" content="<?php e(Settings::get('site_description', 'HuBBS是一款轻量级开源论坛程序')); ?>">
     <title><?php echo isset($pageTitle) && $pageTitle ? h($pageTitle) . ' - ' : ''; ?><?php e(Settings::getFullTitle()); ?></title>
     <link rel="stylesheet" href="<?php echo base_url('static/css/style.css?v=' . HUBBS_VERSION); ?>">
-    <link rel="stylesheet" href="<?php echo base_url('static/css/editor.css?v=' . HUBBS_VERSION); ?>">
+    <style>
+        /* 搜索框样式 */
+        .search-box {
+            margin: 0 20px;
+            flex: 1;
+            max-width: 400px;
+        }
+        
+        .search-form {
+            display: flex;
+            align-items: center;
+            background: #f5f5f5;
+            border-radius: 25px;
+            padding: 4px;
+            transition: all 0.2s;
+        }
+        
+        .search-form:focus-within {
+            background: #fff;
+            box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.2);
+        }
+        
+        .search-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 8px 15px;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .search-input::placeholder {
+            color: #999;
+        }
+        
+        .search-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: #ff6b6b;
+            color: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .search-btn:hover {
+            background: #ff5252;
+            transform: scale(1.05);
+        }
+        
+        @media (max-width: 768px) {
+            .search-box {
+                order: 3;
+                width: 100%;
+                max-width: none;
+                margin: 10px 0 0 0;
+            }
+        }
+    </style>
     <script src="<?php echo base_url('static/js/editor.js?v=' . HUBBS_VERSION); ?>"></script>
 </head>
 <body>
@@ -35,6 +97,18 @@
                 <a href="<?php echo base_url(); ?>" class="nav-link<?php echo (isset($action) && $action === 'list' && empty($forumId)) ? ' active' : ''; ?>">首页</a>
                 <a href="<?php echo base_url('index.php?module=post&action=create'); ?>" class="nav-link">发帖</a>
             </nav>
+            
+            <!-- 搜索框 -->
+            <div class="search-box">
+                <form action="<?php echo base_url('index.php?module=search&action=index'); ?>" method="get" class="search-form">
+                    <input type="hidden" name="module" value="search">
+                    <input type="hidden" name="action" value="index">
+                    <input type="text" name="keyword" class="search-input" placeholder="搜索帖子..." value="<?php echo isset($_GET['keyword']) ? h($_GET['keyword']) : ''; ?>" required>
+                    <button type="submit" class="search-btn" aria-label="搜索">
+                        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                    </button>
+                </form>
+            </div>
             <div class="user-nav">
                 <?php if (Auth::check()): 
                     $currentUser = Auth::user();
