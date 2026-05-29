@@ -13,5 +13,6 @@
             <p>Powered by <a href="https://bbs.huyourui.com" target="_blank" rel="noopener">HuBBS</a> | 支持亿级数据架构</p>
         </div>
     </footer>
+    <script src="<?php echo base_url('static/js/editor.js?v=' . HUBBS_VERSION); ?>"></script>
 </body>
 </html>

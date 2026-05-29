@@ -104,11 +104,11 @@ class SearchModule {
         }
         
         // 查询结果 - 使用 ? 占位符
-        $sql = "SELECT p.*, u.username, u.avatar, f.name as forum_name,
+        $sql = "SELECT p.*, u.id as user_id, u.username, u.avatar, f.name as forum_name,
                        MATCH({$matchFields}) AGAINST(? IN BOOLEAN MODE) as relevance
-                FROM {$db->table('posts')} p 
-                LEFT JOIN {$db->table('users')} u ON p.user_id = u.id 
-                LEFT JOIN {$db->table('forums')} f ON p.forum_id = f.id 
+                FROM {$db->table('posts')} p
+                LEFT JOIN {$db->table('users')} u ON p.user_id = u.id
+                LEFT JOIN {$db->table('forums')} f ON p.forum_id = f.id
                 WHERE MATCH({$matchFields}) AGAINST(? IN BOOLEAN MODE)
                 ORDER BY relevance DESC, p.created_at DESC
                 LIMIT {$offset}, {$perPage}";
@@ -161,11 +161,11 @@ class SearchModule {
         $total = (int) ($countResult['total'] ?? 0);
         
         // 查询结果 - 使用 ? 占位符
-        $sql = "SELECT p.*, u.username, u.avatar, f.name as forum_name
-                FROM {$db->table('posts')} p 
-                LEFT JOIN {$db->table('users')} u ON p.user_id = u.id 
-                LEFT JOIN {$db->table('forums')} f ON p.forum_id = f.id 
-                WHERE {$whereClause} 
+        $sql = "SELECT p.*, u.id as user_id, u.username, u.avatar, f.name as forum_name
+                FROM {$db->table('posts')} p
+                LEFT JOIN {$db->table('users')} u ON p.user_id = u.id
+                LEFT JOIN {$db->table('forums')} f ON p.forum_id = f.id
+                WHERE {$whereClause}
                 ORDER BY p.created_at DESC
                 LIMIT {$offset}, {$perPage}";
         

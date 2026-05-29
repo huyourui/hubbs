@@ -78,7 +78,6 @@
             }
         }
     </style>
-    <script src="<?php echo base_url('static/js/editor.js?v=' . HUBBS_VERSION); ?>"></script>
 </head>
 <body>
     <header class="header">

@@ -91,7 +91,7 @@ include __DIR__ . '/header.php';
                             <h3 class="post-title">
                                 <?php if ($post['is_top']): ?><span class="badge badge-top">置顶</span><?php endif; ?>
                                 <?php if ($post['is_essence']): ?><span class="badge badge-essence">精华</span><?php endif; ?>
-                                <a href="index.php?module=post&action=view&id=<?php echo $post['id']; ?>"><?php e($post['title']); ?></a>
+                                <a href="index.php?module=post&action=view&id=<?php echo $post['id']; ?>" target="_blank"><?php e($post['title']); ?></a>
                             </h3>
                             <div class="post-meta">
                                 <span class="meta-forum"><?php e($post['forum_name']); ?></span>
@@ -132,7 +132,7 @@ include __DIR__ . '/header.php';
                         <div class="reply-content">
                             <div class="reply-header">
                                 <span class="reply-label">回复了主题</span>
-                                <a href="index.php?module=post&action=view&id=<?php echo $reply['post_id']; ?>" class="reply-post-title"><?php e($reply['post_title']); ?></a>
+                                <a href="index.php?module=post&action=view&id=<?php echo $reply['post_id']; ?>" class="reply-post-title" target="_blank"><?php e($reply['post_title']); ?></a>
                             </div>
                             <div class="reply-body">
                                 <?php echo nl2br(h($reply['content'])); ?>

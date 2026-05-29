@@ -47,7 +47,7 @@ include __DIR__ . '/header.php';
                 <?php foreach ($results as $post): ?>
                 <div class="search-result-item">
                     <div class="result-header">
-                        <a href="<?php echo base_url('index.php?module=post&action=view&id=' . $post['id']); ?>" class="result-title">
+                        <a href="<?php echo base_url('index.php?module=post&action=view&id=' . $post['id']); ?>" class="result-title" target="_blank">
                             <?php echo $post['title_highlighted']; ?>
                         </a>
                         <?php if ($post['is_top']): ?>

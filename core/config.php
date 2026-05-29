@@ -12,7 +12,7 @@ if (!defined('HUBBS_ROOT')) {
 define('ROOT_DIR', dirname(__DIR__));
 
 // 版本信息
-define('HUBBS_VERSION', '1.8.8');
+define('HUBBS_VERSION', '1.8.9');
 define('HUBBS_NAME', 'HuBBS');
 
 // 数据库配置（安装后会被覆盖）

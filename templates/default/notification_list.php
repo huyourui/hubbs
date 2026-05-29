@@ -145,7 +145,7 @@ $typeColors = [
                                         $targetUrl = 'index.php?module=post&action=view&id=' . $notification['target_id'];
                                     }
                                     ?>
-                                    <a href="<?php echo $targetUrl; ?>" class="view-link" onclick="markAsRead(<?php echo $notification['id']; ?>, event)">
+                                    <a href="<?php echo $targetUrl; ?>" class="view-link" target="_blank" onclick="markAsRead(<?php echo $notification['id']; ?>, event)">
                                         查看详情
                                         <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
                                     </a>

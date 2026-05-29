@@ -81,7 +81,7 @@ include __DIR__ . '/header.php';
                                 <?php if ($post['is_top']): ?><span class="badge badge-top">置顶</span><?php endif; ?>
                                 <?php if ($post['is_essence']): ?><span class="badge badge-essence">精华</span><?php endif; ?>
                                 <?php if ($post['is_locked']): ?><span class="badge badge-locked">锁定</span><?php endif; ?>
-                                <a href="index.php?module=post&action=view&id=<?php echo $post['id']; ?>"><?php e($post['title']); ?></a>
+                                <a href="index.php?module=post&action=view&id=<?php echo $post['id']; ?>" target="_blank"><?php e($post['title']); ?></a>
                             </div>
                             <div class="post-meta-v2ex">
                                 <span class="meta-author"><?php e($post['username']); ?></span>
