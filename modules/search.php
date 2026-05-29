@@ -64,45 +64,36 @@ class SearchModule {
     private function performSearch($keyword, $type, $page, $perPage) {
         $db = DB::getInstance();
         $offset = ($page - 1) * $perPage;
-        
+
         // 清理关键词
         $keyword = $this->sanitizeKeyword($keyword);
-        
+
         if (empty($keyword)) {
             return ['results' => [], 'total' => 0];
         }
-        
-        // 构建搜索条件
-        $searchFields = [];
-        switch ($type) {
-            case 'title':
-                $searchFields = ['p.title'];
-                break;
-            case 'content':
-                $searchFields = ['p.content'];
-                break;
-            case 'all':
-            default:
-                $searchFields = ['p.title', 'p.content'];
-                break;
+
+        // 如果单独搜索 title 或 content，使用 LIKE 查询
+        // 因为全文索引是 (title, content) 组合索引，单独字段查询会报错
+        if ($type !== 'all') {
+            return $this->performFallbackSearch($keyword, $type, $page, $perPage);
         }
-        
-        // 构建 MATCH AGAINST 查询
-        $matchFields = implode(', ', $searchFields);
-        
+
+        // 构建 MATCH AGAINST 查询（仅用于 all 类型）
+        $matchFields = 'p.title, p.content';
+
         // 查询总数 - 使用 ? 占位符
-        $countSql = "SELECT COUNT(*) as total 
-                     FROM {$db->table('posts')} p 
+        $countSql = "SELECT COUNT(*) as total
+                     FROM {$db->table('posts')} p
                      WHERE MATCH({$matchFields}) AGAINST(? IN BOOLEAN MODE)";
-        
+
         $countResult = $db->fetch($countSql, [$keyword]);
         $total = (int) ($countResult['total'] ?? 0);
-        
+
         // 如果没有全文索引匹配结果，使用 LIKE 模糊查询作为备选
         if ($total === 0) {
             return $this->performFallbackSearch($keyword, $type, $page, $perPage);
         }
-        
+
         // 查询结果 - 使用 ? 占位符
         $sql = "SELECT p.*, u.id as user_id, u.username, u.avatar, f.name as forum_name,
                        MATCH({$matchFields}) AGAINST(? IN BOOLEAN MODE) as relevance
@@ -112,15 +103,15 @@ class SearchModule {
                 WHERE MATCH({$matchFields}) AGAINST(? IN BOOLEAN MODE)
                 ORDER BY relevance DESC, p.created_at DESC
                 LIMIT {$offset}, {$perPage}";
-        
+
         $results = $db->fetchAll($sql, [$keyword, $keyword]);
-        
+
         // 处理搜索结果，高亮关键词
         foreach ($results as &$result) {
             $result['title_highlighted'] = $this->highlightKeyword($result['title'], $keyword);
             $result['content_highlighted'] = $this->highlightKeyword($this->getExcerpt($result['content'], $keyword), $keyword);
         }
-        
+
         return ['results' => $results, 'total' => $total];
     }
     
