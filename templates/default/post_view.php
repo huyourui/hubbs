@@ -124,14 +124,16 @@ $authorReplyCount = $db->count('replies', 'user_id = ?', [$post['user_id']]);
                     <div class="reply-item" id="reply-<?php echo $reply['id']; ?>">
                         <div class="reply-author">
                             <div class="author-avatar">
-                                <?php if ($reply['avatar']): ?>
-                                <img src="<?php e($reply['avatar']); ?>" alt="<?php e($reply['username']); ?>">
-                                <?php else: ?>
-                                <?php echo render_default_avatar($reply['user_id'], $reply['username'], 'normal', 'avatar-default'); ?>
-                                <?php endif; ?>
+                                <a href="index.php?module=user&action=profile&id=<?php echo $reply['user_id']; ?>">
+                                    <?php if ($reply['avatar']): ?>
+                                    <img src="<?php e($reply['avatar']); ?>" alt="<?php e($reply['username']); ?>">
+                                    <?php else: ?>
+                                    <?php echo render_default_avatar($reply['user_id'], $reply['username'], 'normal', 'avatar-default'); ?>
+                                    <?php endif; ?>
+                                </a>
                             </div>
                             <div class="author-info">
-                                <div class="author-name"><?php e($reply['username']); ?></div>
+                                <div class="author-name"><a href="index.php?module=user&action=profile&id=<?php echo $reply['user_id']; ?>"><?php e($reply['username']); ?></a></div>
                                 <div class="author-time">
                                     <?php echo time_ago($reply['created_at']); ?>
                                     <?php if (!empty($reply['edit_count']) && $reply['edit_count'] > 0): ?>
@@ -170,15 +172,17 @@ $authorReplyCount = $db->count('replies', 'user_id = ?', [$post['user_id']]);
                                     <?php foreach ($comments as $cIndex => $comment): ?>
                                     <div class="comment-item <?php echo $cIndex >= $showLimit ? 'comment-collapsed' : ''; ?>" id="comment-<?php echo $comment['id']; ?>">
                                         <div class="comment-avatar">
-                                            <?php if ($comment['avatar']): ?>
-                                            <img src="<?php e($comment['avatar']); ?>" alt="<?php e($comment['username']); ?>">
-                                            <?php else: ?>
-                                            <?php echo render_default_avatar($comment['user_id'], $comment['username'], 'tiny', 'avatar-tiny'); ?>
-                                            <?php endif; ?>
+                                            <a href="index.php?module=user&action=profile&id=<?php echo $comment['user_id']; ?>">
+                                                <?php if ($comment['avatar']): ?>
+                                                <img src="<?php e($comment['avatar']); ?>" alt="<?php e($comment['username']); ?>">
+                                                <?php else: ?>
+                                                <?php echo render_default_avatar($comment['user_id'], $comment['username'], 'tiny', 'avatar-tiny'); ?>
+                                                <?php endif; ?>
+                                            </a>
                                         </div>
                                         <div class="comment-content">
                                             <div class="comment-header">
-                                                <span class="comment-author"><?php e($comment['username']); ?></span>
+                                                <a href="index.php?module=user&action=profile&id=<?php echo $comment['user_id']; ?>" class="comment-author"><?php e($comment['username']); ?></a>
                                                 <?php if ($comment['to_user_id'] > 0 && $comment['to_username']): ?>
                                                 <span class="comment-reply-to">
                                                     <svg viewBox="0 0 24 24" width="12" height="12"><path fill="currentColor" d="M8 7v4L2 6l6-5v4c5.52 0 10 4.48 10 10 0 2.29-.77 4.4-2.06 6.09l-1.49-1.49C17.22 17.24 18 15.4 18 13c0-3.31-2.69-6-6-6z"/></svg>
@@ -289,13 +293,17 @@ $authorReplyCount = $db->count('replies', 'user_id = ?', [$post['user_id']]);
                     <div class="card-body">
                         <div class="author-profile">
                             <div class="profile-avatar">
-                                <?php if ($post['avatar']): ?>
-                                <img src="<?php e($post['avatar']); ?>" alt="<?php e($post['username']); ?>">
-                                <?php else: ?>
-                                <?php echo render_default_avatar($post['user_id'], $post['username'], 'xlarge', 'avatar-default-large'); ?>
-                                <?php endif; ?>
+                                <a href="index.php?module=user&action=profile&id=<?php echo $post['user_id']; ?>">
+                                    <?php if ($post['avatar']): ?>
+                                    <img src="<?php e($post['avatar']); ?>" alt="<?php e($post['username']); ?>">
+                                    <?php else: ?>
+                                    <?php echo render_default_avatar($post['user_id'], $post['username'], 'xlarge', 'avatar-default-large'); ?>
+                                    <?php endif; ?>
+                                </a>
                             </div>
-                            <div class="profile-name"><?php e($post['username']); ?></div>
+                            <div class="profile-name">
+                                <a href="index.php?module=user&action=profile&id=<?php echo $post['user_id']; ?>"><?php e($post['username']); ?></a>
+                            </div>
                             <div class="profile-stats">
                                 <a href="index.php?module=user&action=profile&id=<?php echo $post['user_id']; ?>" class="stat-box">
                                     <span class="stat-num"><?php echo $authorPostCount; ?></span>

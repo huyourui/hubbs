@@ -138,9 +138,22 @@
     </header>
     
     <?php $msg = get_message(); if ($msg): ?>
-    <div class="message message-<?php echo $msg['type']; ?>">
+    <div class="message message-<?php echo $msg['type']; ?>" id="auto-message">
         <div class="container"><?php e($msg['text']); ?></div>
     </div>
+    <script>
+        // 消息提示3秒后自动消失
+        setTimeout(function() {
+            var msg = document.getElementById('auto-message');
+            if (msg) {
+                msg.style.transition = 'opacity 0.5s ease';
+                msg.style.opacity = '0';
+                setTimeout(function() {
+                    msg.style.display = 'none';
+                }, 500);
+            }
+        }, 3000);
+    </script>
     <?php endif; ?>
     
     <main class="main">
