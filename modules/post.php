@@ -540,8 +540,8 @@ class PostModule {
         ]);
         
         // 更新帖子回复数和最后回复信息
+        $this->updatePostRepliesCount($postId);
         $db->update('posts', [
-            'replies' => $db->count('replies', 'post_id = ?', [$postId]),
             'last_reply_at' => date('Y-m-d H:i:s'),
             'last_reply_user_id' => Auth::id()
         ], 'id = ?', [$postId]);
@@ -724,8 +724,35 @@ class PostModule {
             }
         }
         
+        // 更新帖子回复数（包含楼中楼）
+        $this->updatePostRepliesCount($postId);
+        
         set_message('回复成功');
         redirect('index.php?module=post&action=view&id=' . $postId);
+    }
+    
+    /**
+     * 更新帖子回复数（包含一级回复和楼中楼评论）
+     */
+    private function updatePostRepliesCount($postId) {
+        $db = DB::getInstance();
+        
+        // 统计一级回复数
+        $repliesCount = $db->count('replies', 'post_id = ?', [$postId]);
+        
+        // 统计楼中楼评论数（通过 reply_id 关联到 replies 表，再关联到 posts 表）
+        $commentsCount = $db->fetch(
+            "SELECT COUNT(*) as count FROM {$db->table('reply_comments')} rc 
+             INNER JOIN {$db->table('replies')} r ON rc.reply_id = r.id 
+             WHERE r.post_id = ?",
+            [$postId]
+        );
+        $commentsCount = $commentsCount['count'] ?? 0;
+        
+        // 更新帖子回复数
+        $db->update('posts', [
+            'replies' => $repliesCount + $commentsCount
+        ], 'id = ?', [$postId]);
     }
     
     /**
