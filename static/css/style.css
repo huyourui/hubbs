@@ -981,6 +981,20 @@ a:hover {
     flex-shrink: 0;
 }
 
+/* 摘要 */
+.post-excerpt-v2ex {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.6;
+    margin-top: 6px;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
 /* 元信息 */
 .post-meta-v2ex {
     display: flex;

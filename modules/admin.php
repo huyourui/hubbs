@@ -852,6 +852,8 @@ class AdminModule {
                     'reply_max_length' => trim($_POST['reply_max_length'] ?? '5000'),
                     'posts_per_page' => trim($_POST['posts_per_page'] ?? '20'),
                     'replies_per_page' => trim($_POST['replies_per_page'] ?? '20'),
+                    'post_list_show_excerpt' => isset($_POST['post_list_show_excerpt']) ? '1' : '0',
+                    'post_list_excerpt_length' => trim($_POST['post_list_excerpt_length'] ?? '100'),
                     'post_interval' => trim($_POST['post_interval'] ?? '0'),
                     'reply_interval' => trim($_POST['reply_interval'] ?? '0'),
                     'upload_image_exts' => trim($_POST['upload_image_exts'] ?? 'jpg,jpeg,png,gif,webp'),

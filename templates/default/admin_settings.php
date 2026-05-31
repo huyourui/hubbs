@@ -147,6 +147,20 @@ include __DIR__ . '/admin_header.php';
                     <input type="number" name="replies_per_page" value="<?php e($settings['replies_per_page'] ?? '20'); ?>" min="5" max="100">
                 </div>
             </div>
+
+            <div class="checkbox-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="post_list_show_excerpt" value="1" <?php echo ($settings['post_list_show_excerpt'] ?? '0') === '1' ? 'checked' : ''; ?>>
+                    <span class="checkbox-text">帖子列表显示摘要</span>
+                </label>
+                <span class="form-hint">开启后在帖子列表显示帖子内容摘要</span>
+            </div>
+
+            <div class="form-group">
+                <label>摘要字符数</label>
+                <input type="number" name="post_list_excerpt_length" value="<?php e($settings['post_list_excerpt_length'] ?? '100'); ?>" min="20" max="500">
+                <span class="form-hint">默认100个字符，建议50-200个字符</span>
+            </div>
         </div>
 
         <div class="settings-section">

@@ -83,6 +83,18 @@ include __DIR__ . '/header.php';
                                 <?php if ($post['is_locked']): ?><span class="badge badge-locked">锁定</span><?php endif; ?>
                                 <a href="index.php?module=post&action=view&id=<?php echo $post['id']; ?>" target="_blank"><?php e($post['title']); ?></a>
                             </div>
+                            <?php
+                            // 显示帖子摘要
+                            $showExcerpt = ($settings['post_list_show_excerpt'] ?? '0') === '1';
+                            if ($showExcerpt && !empty($post['content'])):
+                                $excerptLength = intval($settings['post_list_excerpt_length'] ?? 100);
+                                $excerpt = strip_tags($post['content']);
+                                if (mb_strlen($excerpt) > $excerptLength):
+                                    $excerpt = mb_substr($excerpt, 0, $excerptLength) . '...';
+                                endif;
+                            ?>
+                            <div class="post-excerpt-v2ex"><?php e($excerpt); ?></div>
+                            <?php endif; ?>
                             <div class="post-meta-v2ex">
                                 <span class="meta-author"><?php e($post['username']); ?></span>
                                 <span class="meta-dot">·</span>

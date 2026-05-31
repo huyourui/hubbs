@@ -84,7 +84,8 @@ class PostModule {
                 'forumId' => $forumId,
                 'page' => $page,
                 'total' => $total,
-                'totalPages' => ceil($total / POSTS_PER_PAGE)
+                'totalPages' => ceil($total / POSTS_PER_PAGE),
+                'settings' => Settings::getAll()
             ]
         ];
     }
