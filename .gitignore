@@ -4,6 +4,9 @@
 # 安装锁定文件
 /install.lock
 
+# website目录（不上传到仓库）
+/website/
+
 # 上传文件目录
 /uploads/images/*
 /uploads/attachments/*
