@@ -537,20 +537,20 @@ class PostModule {
         }
         
         // 创建回复
-        $db->insert('replies', [
+        $replyId = $db->insert('replies', [
             'post_id' => $postId,
             'user_id' => Auth::id(),
             'content' => $content,
             'created_at' => date('Y-m-d H:i:s')
         ]);
-        
+
         // 更新帖子回复数和最后回复信息
         $this->updatePostRepliesCount($postId);
         $db->update('posts', [
             'last_reply_at' => date('Y-m-d H:i:s'),
             'last_reply_user_id' => Auth::id()
         ], 'id = ?', [$postId]);
-        
+
         // 发送消息通知给帖子作者
         if ($post['user_id'] != Auth::id()) {
             $currentUser = Auth::user();
@@ -564,7 +564,7 @@ class PostModule {
                 );
             }
         }
-        
+
         set_message('回复成功');
 
         // 如果是AJAX请求，返回JSON数据
@@ -575,7 +575,7 @@ class PostModule {
                 'success' => true,
                 'message' => '回复成功',
                 'reply' => [
-                    'id' => $db->lastInsertId(),
+                    'id' => $replyId,
                     'post_id' => $postId,
                     'user_id' => Auth::id(),
                     'username' => $currentUser['username'] ?? '',
@@ -717,14 +717,14 @@ class PostModule {
         $post = $db->fetch("SELECT id, title FROM {$db->table('posts')} WHERE id = ? LIMIT 1", [$postId]);
         
         // 创建楼中楼评论
-        $db->insert('reply_comments', [
+        $commentId = $db->insert('reply_comments', [
             'reply_id' => $replyId,
             'user_id' => Auth::id(),
             'to_user_id' => $toUserId,
             'content' => $content,
             'created_at' => date('Y-m-d H:i:s')
         ]);
-        
+
         // 发送消息通知
         if ($post) {
             $currentUser = Auth::user();
@@ -751,7 +751,7 @@ class PostModule {
                 }
             }
         }
-        
+
         // 更新帖子回复数（包含楼中楼）
         $this->updatePostRepliesCount($postId);
 
@@ -773,7 +773,7 @@ class PostModule {
                 'success' => true,
                 'message' => '回复成功',
                 'comment' => [
-                    'id' => $db->lastInsertId(),
+                    'id' => $commentId,
                     'reply_id' => $replyId,
                     'user_id' => Auth::id(),
                     'username' => $currentUser['username'] ?? '',
