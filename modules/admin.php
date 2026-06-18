@@ -57,10 +57,12 @@ class AdminModule {
         $db = DB::getInstance();
 
         // 统计数据
+        $repliesCount = $db->count('replies');
+        $commentsCount = $db->count('reply_comments');
         $stats = [
             'users' => $db->count('users'),
             'posts' => $db->count('posts'),
-            'replies' => $db->count('replies'),
+            'replies' => $repliesCount + $commentsCount,
             'forums' => $db->count('forums'),
         ];
 

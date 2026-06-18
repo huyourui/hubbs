@@ -232,9 +232,15 @@ $authorReplyCount = $db->count('replies', 'user_id = ?', [$post['user_id']]);
                                     <input type="hidden" name="reply_id" value="<?php echo $reply['id']; ?>">
                                     <input type="hidden" name="post_id" value="<?php echo $post['id']; ?>">
                                     <input type="hidden" name="to_user_id" value="0" id="to-user-id-<?php echo $reply['id']; ?>">
+                                    <div class="editor-toolbar">
+                                        <button type="button" class="emoji-btn" onclick="toggleEmojiPanel(<?php echo $reply['id']; ?>)" title="插入表情">
+                                            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></svg>
+                                        </button>
+                                        <div class="emoji-panel emoji-panel-small" id="emoji-panel-<?php echo $reply['id']; ?>" style="display: none;"></div>
+                                    </div>
                                     <div class="reply-input-box">
                                         <span class="reply-target" id="reply-target-<?php echo $reply['id']; ?>">回复 <?php e($reply['username']); ?>：</span>
-                                        <textarea name="content" rows="2" placeholder="写下你的回复..." required></textarea>
+                                        <textarea name="content" id="reply-textarea-<?php echo $reply['id']; ?>" rows="2" placeholder="写下你的回复..." required></textarea>
                                     </div>
                                     <div class="reply-form-actions">
                                         <button type="button" class="btn-cancel" onclick="hideReplyForm(<?php echo $reply['id']; ?>)">取消</button>
@@ -283,7 +289,13 @@ $authorReplyCount = $db->count('replies', 'user_id = ?', [$post['user_id']]);
                     <form method="post" action="index.php?module=post&action=reply" class="reply-form">
                         <?php csrf_field(); ?>
                         <input type="hidden" name="post_id" value="<?php echo $post['id']; ?>">
-                        <textarea name="content" rows="5" placeholder="请输入回复内容..." required></textarea>
+                        <div class="editor-toolbar">
+                            <button type="button" class="emoji-btn" onclick="toggleEmojiPanel('main')" title="插入表情">
+                                <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></svg>
+                            </button>
+                            <div class="emoji-panel" id="emoji-panel-main" style="display: none;"></div>
+                        </div>
+                        <textarea name="content" id="reply-textarea-main" rows="5" placeholder="请输入回复内容..." required></textarea>
                         <div class="form-actions">
                             <span class="shortcut-tip">Ctrl + Enter 快捷提交</span>
                             <button type="submit" class="btn-primary">发表回复</button>
@@ -841,6 +853,173 @@ function renderAvatarSvg(userId, username, size, className) {
     </svg>`;
 }
 
+// ==================== 微信表情功能 ====================
+
+/**
+ * 微信表情数据（名称 => emoji）
+ * 与后端 functions.php 中的 get_wechat_emojis() 保持一致
+ */
+const WECHAT_EMOJIS = {
+    '微笑': '😊', '撇嘴': '😒', '色': '😍', '发呆': '😳',
+    '得意': '😏', '流泪': '😭', '害羞': '😳', '闭嘴': '🤐',
+    '睡': '😴', '大哭': '😭', '尴尬': '😅', '发怒': '😠',
+    '调皮': '😜', '龇牙': '😁', '惊讶': '😲', '难过': '😞',
+    '酷': '😎', '冷汗': '😰', '抓狂': '😫', '吐': '😖',
+    '偷笑': '🤭', '可爱': '🥰', '白眼': '🙄', '傲慢': '😤',
+    '饥饿': '😋', '困': '😪', '惊恐': '😱', '流汗': '😓',
+    '憨笑': '😄', '大兵': '😐', '奋斗': '💪', '咒骂': '🤬',
+    '疑问': '❓', '嘘': '🤫', '晕': '😵', '折磨': '😣',
+    '衰': '😩', '骷髅': '💀', '敲打': '🔨', '再见': '👋',
+    '擦汗': '😅', '抠鼻': '🤥', '鼓掌': '👏', '坏笑': '😈',
+    '左哼哼': '😤', '右哼哼': '😤', '哈欠': '😪', '鄙视': '😒',
+    '委屈': '😔', '快哭了': '😢', '阴险': '😏', '亲亲': '😘',
+    '吓': '😲', '可怜': '🥺', '菜刀': '🔪', '西瓜': '🍉',
+    '啤酒': '🍺', '篮球': '🏀', '乒乓': '🏓', '咖啡': '☕',
+    '饭': '🍚', '猪头': '🐷', '玫瑰': '🌹', '凋谢': '🥀',
+    '示爱': '💘', '爱心': '❤️', '心碎': '💔', '蛋糕': '🎂',
+    '闪电': '⚡', '炸弹': '💣', '刀': '🔪', '足球': '⚽',
+    '瓢虫': '🐞', '便便': '💩', '月亮': '🌙', '太阳': '☀️',
+    '礼物': '🎁', '拥抱': '🤗', '强': '👍', '弱': '👎',
+    '握手': '🤝', '胜利': '✌️', '抱拳': '🙏', '勾引': '👉',
+    '拳头': '👊', '差劲': '👎', '爱你': '🤟', 'NO': '🙅',
+    'OK': '👌', '爱情': '💕', '飞吻': '😘', '跳跳': '🏃',
+    '发抖': '🥶', '怄火': '😤', '转圈': '🔄', '磕头': '🙇',
+    '回头': '↩️', '跳绳': '🏃‍♀️', '挥手': '👋', '激动': '🥳',
+    '街舞': '🕺', '献吻': '😘', '左太极': '☯️', '右太极': '☯️',
+    '笑脸': '😃', '生病': '😷', '破涕为笑': '😂', '吐舌': '😛',
+    '无语': '😑', '失望': '😞', '思考': '🤔', '赢': '🏆',
+    '输': '😞', '庆祝': '🎉', '礼物盒': '🎁', '灯泡': '💡',
+    '铃铛': '🔔', '音乐': '🎵', '火焰': '🔥', '水滴': '💧',
+    '星星': '⭐', '彩虹': '🌈', '雨伞': '☂️', '雪人': '☃️',
+    '飞机': '✈️', '汽车': '🚗', '自行车': '🚲', '火箭': '🚀',
+    '时钟': '⏰', '手机': '📱', '电脑': '💻', '钱包': '👛',
+    '药': '💊', '医院': '🏥', '学校': '🏫', '银行': '🏦',
+    '酒店': '🏨', '教堂': '⛪', '寺庙': '🛕', '城堡': '🏰'
+};
+
+/**
+ * 表情分类数据
+ */
+const EMOJI_CATEGORIES = [
+    { name: '常用', keys: ['微笑', '流泪', '调皮', '龇牙', '大哭', '偷笑', '惊讶', '难过', '酷', '发怒', '尴尬', '亲亲', '可怜', '晕', '嘘', '疑问'] },
+    { name: '心情', keys: ['害羞', '闭嘴', '睡', '冷汗', '抓狂', '吐', '可爱', '白眼', '傲慢', '饥饿', '困', '惊恐', '流汗', '憨笑', '大兵', '咒骂', '衰', '骷髅', '坏笑', '委屈', '快哭了', '阴险', '吓', '笑脸', '生病', '破涕为笑', '无语', '失望'] },
+    { name: '动作', keys: ['奋斗', '再见', '擦汗', '抠鼻', '鼓掌', '左哼哼', '右哼哼', '哈欠', '鄙视', '拥抱', '强', '弱', '握手', '胜利', '抱拳', '勾引', '拳头', '差劲', '爱你', 'NO', 'OK', '飞吻', '跳跳', '发抖', '怄火', '转圈', '磕头', '回头', '跳绳', '挥手', '激动', '街舞', '献吻', '左太极', '右太极'] },
+    { name: '物品', keys: ['菜刀', '西瓜', '啤酒', '篮球', '乒乓', '咖啡', '饭', '猪头', '玫瑰', '凋谢', '示爱', '爱心', '心碎', '蛋糕', '闪电', '炸弹', '刀', '足球', '瓢虫', '便便', '月亮', '太阳', '礼物', '爱情', '庆祝', '礼物盒', '灯泡', '铃铛', '音乐', '火焰', '水滴', '星星', '彩虹', '雨伞', '雪人'] },
+    { name: '其他', keys: ['飞机', '汽车', '自行车', '火箭', '时钟', '手机', '电脑', '钱包', '药', '医院', '学校', '银行', '酒店', '教堂', '寺庙', '城堡', '思考', '赢', '输', '吐舌'] }
+];
+
+/**
+ * 当前打开的表情面板ID
+ */
+let currentEmojiPanel = null;
+
+/**
+ * 切换表情面板显示/隐藏
+ */
+function toggleEmojiPanel(id) {
+    const panelId = 'emoji-panel-' + id;
+    const panel = document.getElementById(panelId);
+    if (!panel) return;
+
+    // 如果点击的是当前已打开的面板，则关闭它
+    if (currentEmojiPanel === panelId && panel.style.display !== 'none') {
+        panel.style.display = 'none';
+        currentEmojiPanel = null;
+        return;
+    }
+
+    // 关闭其他已打开的面板
+    closeAllEmojiPanels();
+
+    // 如果面板内容为空，初始化表情内容
+    if (panel.innerHTML.trim() === '') {
+        initEmojiPanel(panel, id);
+    }
+
+    // 显示面板
+    panel.style.display = 'block';
+    currentEmojiPanel = panelId;
+}
+
+/**
+ * 初始化表情面板内容
+ */
+function initEmojiPanel(panel, textareaId) {
+    let html = '<div class="emoji-tabs">';
+    EMOJI_CATEGORIES.forEach((cat, index) => {
+        html += `<button type="button" class="emoji-tab ${index === 0 ? 'active' : ''}" data-tab="${index}" onclick="switchEmojiTab(this, ${index})">${cat.name}</button>`;
+    });
+    html += '</div>';
+
+    html += '<div class="emoji-content">';
+    EMOJI_CATEGORIES.forEach((cat, index) => {
+        html += `<div class="emoji-page ${index === 0 ? 'active' : ''}" data-page="${index}">`;
+        cat.keys.forEach(key => {
+            const emoji = WECHAT_EMOJIS[key];
+            if (emoji) {
+                html += `<span class="emoji-item" title="${key}" onclick="insertEmoji('${textareaId}', '[${key}]')">${emoji}</span>`;
+            }
+        });
+        html += '</div>';
+    });
+    html += '</div>';
+
+    panel.innerHTML = html;
+}
+
+/**
+ * 切换表情分类标签
+ */
+function switchEmojiTab(tabBtn, index) {
+    const panel = tabBtn.closest('.emoji-panel');
+    panel.querySelectorAll('.emoji-tab').forEach(t => t.classList.remove('active'));
+    panel.querySelectorAll('.emoji-page').forEach(p => p.classList.remove('active'));
+    tabBtn.classList.add('active');
+    const page = panel.querySelector('.emoji-page[data-page="' + index + '"]');
+    if (page) page.classList.add('active');
+}
+
+/**
+ * 插入表情到文本框
+ */
+function insertEmoji(textareaId, emojiText) {
+    const textarea = document.getElementById('reply-textarea-' + textareaId);
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+
+    // 在光标位置插入表情文本
+    textarea.value = text.substring(0, start) + emojiText + text.substring(end);
+
+    // 将光标移动到插入的表情之后
+    const newCursorPos = start + emojiText.length;
+    textarea.selectionStart = textarea.selectionEnd = newCursorPos;
+
+    // 聚焦文本框
+    textarea.focus();
+}
+
+/**
+ * 关闭所有表情面板
+ */
+function closeAllEmojiPanels() {
+    document.querySelectorAll('.emoji-panel').forEach(panel => {
+        panel.style.display = 'none';
+    });
+    currentEmojiPanel = null;
+}
+
+/**
+ * 点击页面其他地方关闭表情面板
+ */
+document.addEventListener('click', function(e) {
+    if (currentEmojiPanel && !e.target.closest('.emoji-panel') && !e.target.closest('.emoji-btn')) {
+        closeAllEmojiPanels();
+    }
+});
+
 // 点赞功能
 function toggleLike(postId, btn) {
     <?php if (Auth::guest()): ?>
@@ -1196,6 +1375,167 @@ function showToast(message, type = 'info') {
 
 .comment-highlight {
     animation: commentHighlight 2s ease-out;
+}
+
+/* ==================== 微信表情功能样式 ==================== */
+
+/* 编辑器工具栏 */
+.editor-toolbar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border: 1px solid #e5e7eb;
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+}
+
+.editor-toolbar + textarea {
+    border-radius: 0 0 8px 8px;
+    border-top: none;
+}
+
+/* 表情按钮 */
+.emoji-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.emoji-btn:hover {
+    background: #e5e7eb;
+    color: #ff6b6b;
+}
+
+/* 表情面板 */
+.emoji-panel {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    z-index: 100;
+    width: 380px;
+    max-width: 90vw;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    overflow: hidden;
+}
+
+.emoji-panel-small {
+    width: 340px;
+    bottom: calc(100% + 4px);
+}
+
+/* 表情分类标签 */
+.emoji-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 8px 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+    background: #fafafa;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.emoji-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.emoji-tab {
+    padding: 6px 12px;
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 6px 6px 0 0;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.emoji-tab:hover {
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.08);
+}
+
+.emoji-tab.active {
+    color: #ff6b6b;
+    font-weight: 500;
+    background: #fff;
+    border-bottom: 2px solid #ff6b6b;
+}
+
+/* 表情内容区域 */
+.emoji-content {
+    padding: 8px;
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.emoji-page {
+    display: none;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.emoji-page.active {
+    display: flex;
+}
+
+/* 单个表情项 */
+.emoji-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    font-size: 22px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.15s;
+    user-select: none;
+}
+
+.emoji-item:hover {
+    background: rgba(255, 107, 107, 0.1);
+    transform: scale(1.2);
+}
+
+/* 微信表情渲染样式 */
+.wechat-emoji {
+    display: inline-block;
+    font-size: 1.2em;
+    line-height: 1;
+    vertical-align: middle;
+    margin: 0 1px;
+}
+
+/* 移动端适配 */
+@media (max-width: 640px) {
+    .emoji-panel {
+        width: 300px;
+    }
+    .emoji-panel-small {
+        width: 280px;
+    }
+    .emoji-content {
+        max-height: 200px;
+    }
+    .emoji-item {
+        width: 32px;
+        height: 32px;
+        font-size: 20px;
+    }
 }
 </style>
 
