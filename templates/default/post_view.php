@@ -55,6 +55,9 @@ $authorReplyCount = $db->count('replies', 'user_id = ?', [$post['user_id']]);
                         <span class="meta-item">
                             <a href="index.php?module=post&action=edit&id=<?php echo $post['id']; ?>" class="edit-link">编辑帖子</a>
                         </span>
+                        <span class="meta-item">
+                            <a href="javascript:void(0);" onclick="if(confirm('确定要删除这个帖子吗？删除后无法恢复。')) { window.location.href='index.php?module=post&action=delete&id=<?php echo $post['id']; ?>&csrf_token=<?php echo csrf_token(); ?>'; }" class="delete-link">删除帖子</a>
+                        </span>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -161,6 +164,11 @@ $authorReplyCount = $db->count('replies', 'user_id = ?', [$post['user_id']]);
                                     <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                                     编辑
                                 </button>
+                                <button type="button" class="action-btn delete-reply-btn"
+                                        onclick="if(confirm('确定要删除这条回复吗？')) { window.location.href='index.php?module=post&action=deleteReply&id=<?php echo $reply['id']; ?>&csrf_token=<?php echo csrf_token(); ?>'; }">
+                                    <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                    删除
+                                </button>
                                 <?php endif; ?>
                             </div>
                             <?php endif; ?>
@@ -245,6 +253,12 @@ $authorReplyCount = $db->count('replies', 'user_id = ?', [$post['user_id']]);
                     <?php echo pagination($total, $page, REPLIES_PER_PAGE, 'index.php?module=post&action=view&id=' . $post['id'] . '&page='); ?>
                 </div>
                 <?php endif; ?>
+
+                <?php else: ?>
+                <!-- 没有回复时的提示 -->
+                <div class="no-replies">
+                    <p>暂无回复，快来抢沙发吧！</p>
+                </div>
                 <?php endif; ?>
 
                 <!-- 底部回复表单 -->
@@ -435,20 +449,397 @@ function toggleComments(btn, replyId) {
     }
 }
 
-// Ctrl+Enter 快捷提交
+// Ctrl+Enter 快捷提交 + AJAX表单提交
 document.addEventListener('DOMContentLoaded', function() {
+    // 主回复表单AJAX提交
+    const mainReplyForm = document.querySelector('.main-reply-form .reply-form');
+    if (mainReplyForm) {
+        setupAjaxForm(mainReplyForm, function(data) {
+            if (data.success && data.reply) {
+                // 将新回复添加到回复列表末尾
+                addReplyToList(data.reply);
+                // 清空表单
+                mainReplyForm.reset();
+                // 显示成功提示
+                showToast('回复成功', 'success');
+                // 更新回复计数
+                updateReplyCount(1);
+            } else {
+                showToast(data.message || '回复失败', 'error');
+            }
+        });
+    }
+
+    // 楼中楼回复表单AJAX提交
+    document.querySelectorAll('.reply-comment-form').forEach(function(form) {
+        setupAjaxForm(form, function(data) {
+            if (data.success && data.comment) {
+                // 将新评论添加到对应的楼中楼列表
+                addCommentToList(data.comment);
+                // 清空表单并隐藏
+                form.reset();
+                const replyId = form.querySelector('input[name="reply_id"]').value;
+                hideReplyForm(replyId);
+                // 显示成功提示
+                showToast('回复成功', 'success');
+                // 更新回复计数
+                updateReplyCount(1);
+            } else {
+                showToast(data.message || '回复失败', 'error');
+            }
+        });
+    });
+
+    // 为所有回复表单绑定Ctrl+Enter快捷键
     document.querySelectorAll('.reply-form, .reply-comment-form').forEach(function(form) {
         const textarea = form.querySelector('textarea');
         if (textarea) {
             textarea.addEventListener('keydown', function(e) {
                 if (e.ctrlKey && e.key === 'Enter') {
                     e.preventDefault();
-                    form.submit();
+                    // 触发自定义AJAX提交，而不是原生表单提交
+                    if (form.dataset.ajaxSubmit) {
+                        form.dispatchEvent(new Event('ajax-submit'));
+                    } else {
+                        form.submit();
+                    }
                 }
             });
         }
     });
 });
+
+/**
+ * 设置表单AJAX提交
+ */
+function setupAjaxForm(form, callback) {
+    form.dataset.ajaxSubmit = 'true';
+
+    form.addEventListener('ajax-submit', function(e) {
+        e.preventDefault();
+        submitFormAjax(form, callback);
+    });
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        submitFormAjax(form, callback);
+    });
+}
+
+/**
+ * AJAX提交表单
+ */
+function submitFormAjax(form, callback) {
+    const formData = new FormData(form);
+    const action = form.getAttribute('action');
+
+    // 添加AJAX标识
+    fetch(action, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        callback(data);
+    })
+    .catch(error => {
+        showToast('网络错误，请稍后重试', 'error');
+    });
+}
+
+/**
+ * 添加新回复到列表
+ */
+function addReplyToList(reply) {
+    const repliesList = document.querySelector('.replies-list');
+    const noReplies = document.querySelector('.no-replies');
+
+    // 移除"暂无回复"提示
+    if (noReplies) {
+        noReplies.remove();
+    }
+
+    // 如果没有回复列表容器，创建一个新的
+    let listContainer = repliesList;
+    if (!listContainer) {
+        // 在回复表单之前插入回复列表
+        const mainReplyForm = document.querySelector('.main-reply-form');
+        if (mainReplyForm) {
+            listContainer = document.createElement('div');
+            listContainer.className = 'replies-list';
+            mainReplyForm.parentNode.insertBefore(listContainer, mainReplyForm);
+        }
+    }
+
+    if (!listContainer) return;
+
+    // 计算楼层号
+    const existingReplies = listContainer.querySelectorAll('.reply-item');
+    const floorNumber = existingReplies.length + 1;
+
+    // 获取当前用户信息
+    const currentUserAvatar = '<?php echo Auth::check() ? (Auth::user()['avatar'] ?? '') : ''; ?>';
+    const currentUserId = '<?php echo Auth::check() ? Auth::id() : 0; ?>';
+
+    // 创建回复HTML
+    const replyHtml = createReplyHtml(reply, floorNumber, currentUserAvatar, currentUserId);
+
+    // 添加到列表末尾
+    listContainer.insertAdjacentHTML('beforeend', replyHtml);
+
+    // 滚动到新回复
+    const newReply = listContainer.lastElementChild;
+    if (newReply) {
+        newReply.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // 添加高亮动画
+        newReply.classList.add('reply-highlight');
+        setTimeout(() => newReply.classList.remove('reply-highlight'), 2000);
+    }
+}
+
+/**
+ * 添加新评论到楼中楼列表
+ */
+function addCommentToList(comment) {
+    const replyId = comment.reply_id;
+    const replyItem = document.getElementById('reply-' + replyId);
+    if (!replyItem) return;
+
+    let commentsContainer = replyItem.querySelector('.reply-comments');
+
+    // 如果没有楼中楼容器，创建一个
+    if (!commentsContainer) {
+        const replyContent = replyItem.querySelector('.reply-content');
+        if (!replyContent) return;
+
+        commentsContainer = document.createElement('div');
+        commentsContainer.className = 'reply-comments';
+        commentsContainer.innerHTML = '<div class="comments-list" data-count="0" data-limit="3"></div>';
+        replyContent.appendChild(commentsContainer);
+    }
+
+    const commentsList = commentsContainer.querySelector('.comments-list');
+    if (!commentsList) return;
+
+    // 更新计数
+    let currentCount = parseInt(commentsList.dataset.count || 0);
+    currentCount++;
+    commentsList.dataset.count = currentCount;
+
+    // 判断是否需要折叠（超过3条时）
+    const isCollapsed = currentCount > 3;
+
+    // 创建评论HTML
+    const commentHtml = createCommentHtml(comment, isCollapsed);
+
+    // 添加到列表末尾
+    commentsList.insertAdjacentHTML('beforeend', commentHtml);
+
+    // 更新或创建展开按钮
+    updateExpandButton(commentsContainer, currentCount);
+
+    // 滚动到新评论
+    const newComment = commentsList.lastElementChild;
+    if (newComment) {
+        newComment.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        // 添加高亮动画
+        newComment.classList.add('comment-highlight');
+        setTimeout(() => newComment.classList.remove('comment-highlight'), 2000);
+    }
+}
+
+/**
+ * 创建回复HTML
+ */
+function createReplyHtml(reply, floorNumber, currentUserAvatar, currentUserId) {
+    const avatarHtml = reply.avatar
+        ? `<img src="${escapeHtml(reply.avatar)}" alt="${escapeHtml(reply.username)}">`
+        : renderAvatarSvg(reply.user_id, reply.username, 'normal', 'avatar-default');
+
+    const isOwnReply = parseInt(currentUserId) === parseInt(reply.user_id);
+    const editButtons = isOwnReply ? `
+        <button type="button" class="action-btn edit-reply-btn" onclick="editReply(${reply.id}, ${reply.post_id})">
+            <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+            编辑
+        </button>
+        <button type="button" class="action-btn delete-reply-btn" onclick="if(confirm('确定要删除这条回复吗？')) { window.location.href='index.php?module=post&action=deleteReply&id=${reply.id}&csrf_token=${getCsrfToken()}'; }">
+            <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+            删除
+        </button>
+    ` : '';
+
+    return `
+        <div class="reply-item reply-highlight" id="reply-${reply.id}">
+            <div class="reply-author">
+                <div class="author-avatar">
+                    <a href="index.php?module=user&action=profile&id=${reply.user_id}">
+                        ${avatarHtml}
+                    </a>
+                </div>
+                <div class="author-info">
+                    <div class="author-name"><a href="index.php?module=user&action=profile&id=${reply.user_id}">${escapeHtml(reply.username)}</a></div>
+                    <div class="author-time">刚刚</div>
+                </div>
+                <div class="reply-floor">#${floorNumber}</div>
+            </div>
+            <div class="reply-content">
+                <div class="reply-body" id="reply-body-${reply.id}">
+                    ${reply.content}
+                </div>
+                <div class="reply-actions">
+                    <button type="button" class="action-btn reply-btn" onclick="showReplyForm(${reply.id}, 0, '${escapeHtml(reply.username)}')">
+                        <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"/></svg>
+                        回复
+                    </button>
+                    ${editButtons}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * 创建楼中楼评论HTML
+ */
+function createCommentHtml(comment, isCollapsed) {
+    const avatarHtml = comment.avatar
+        ? `<img src="${escapeHtml(comment.avatar)}" alt="${escapeHtml(comment.username)}">`
+        : renderAvatarSvg(comment.user_id, comment.username, 'tiny', 'avatar-tiny');
+
+    const replyToHtml = comment.to_user_id > 0 && comment.to_username
+        ? `<span class="comment-reply-to">
+            <svg viewBox="0 0 24 24" width="12" height="12"><path fill="currentColor" d="M8 7v4L2 6l6-5v4c5.52 0 10 4.48 10 10 0 2.29-.77 4.4-2.06 6.09l-1.49-1.49C17.22 17.24 18 15.4 18 13c0-3.31-2.69-6-6-6z"/></svg>
+            ${escapeHtml(comment.to_username)}
+          </span>`
+        : '';
+
+    const collapsedClass = isCollapsed ? 'comment-collapsed' : '';
+
+    return `
+        <div class="comment-item ${collapsedClass} comment-highlight" id="comment-${comment.id}">
+            <div class="comment-avatar">
+                <a href="index.php?module=user&action=profile&id=${comment.user_id}">
+                    ${avatarHtml}
+                </a>
+            </div>
+            <div class="comment-content">
+                <div class="comment-header">
+                    <a href="index.php?module=user&action=profile&id=${comment.user_id}" class="comment-author">${escapeHtml(comment.username)}</a>
+                    ${replyToHtml}
+                    <span class="comment-time">刚刚</span>
+                </div>
+                <div class="comment-body">
+                    ${comment.content}
+                </div>
+            </div>
+            <button type="button" class="comment-reply-btn" onclick="showReplyForm(${comment.reply_id}, ${comment.user_id}, '${escapeHtml(comment.username)}')">
+                回复
+            </button>
+        </div>
+    `;
+}
+
+/**
+ * 更新展开按钮
+ */
+function updateExpandButton(commentsContainer, count) {
+    let expandWrapper = commentsContainer.querySelector('.comments-expand');
+    const limit = 3;
+
+    if (count > limit) {
+        if (!expandWrapper) {
+            expandWrapper = document.createElement('div');
+            expandWrapper.className = 'comments-expand';
+            commentsContainer.appendChild(expandWrapper);
+        }
+        expandWrapper.innerHTML = `
+            <button type="button" class="expand-btn" onclick="toggleComments(this, ${commentsContainer.closest('.reply-item').id.replace('reply-', '')})">
+                <span class="expand-text">展开剩余 ${count - limit} 条回复</span>
+                <svg viewBox="0 0 24 24" width="12" height="12"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>
+            </button>
+        `;
+    } else if (expandWrapper) {
+        expandWrapper.remove();
+    }
+}
+
+/**
+ * 更新回复计数显示
+ */
+function updateReplyCount(delta) {
+    // 更新帖子头部统计
+    const statItems = document.querySelectorAll('.stat-item');
+    statItems.forEach(function(item) {
+        const text = item.textContent;
+        if (text.includes('回复')) {
+            const numEl = item.querySelector('.stat-num');
+            if (numEl) {
+                const current = parseInt(numEl.textContent.replace(/,/g, '')) || 0;
+                numEl.textContent = numberFormat(current + delta);
+            }
+        }
+    });
+
+    // 更新回复列表头部计数
+    const repliesCount = document.querySelector('.replies-count');
+    if (repliesCount) {
+        const current = parseInt(repliesCount.textContent) || 0;
+        repliesCount.textContent = (current + delta) + ' 条回复';
+    }
+}
+
+/**
+ * 数字格式化（添加千分位）
+ */
+function numberFormat(num) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+/**
+ * HTML转义
+ */
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+/**
+ * 获取CSRF Token
+ */
+function getCsrfToken() {
+    const tokenEl = document.querySelector('input[name="csrf_token"]');
+    return tokenEl ? tokenEl.value : '';
+}
+
+/**
+ * 渲染默认头像SVG
+ */
+function renderAvatarSvg(userId, username, size, className) {
+    // 使用与后端相同的颜色生成逻辑
+    const colors = [
+        '#FF6B6B', '#4ECDC4', '#667EEA', '#F093FB', '#4FACFE',
+        '#43E97B', '#FA709A', '#30CFD0', '#FF9A9E', '#FCB69F',
+        '#FF8A80', '#B388FF', '#82B1FF', '#69F0AE', '#FFAB40',
+        '#FF5252', '#E040FB', '#536DFE', '#40C4FF', '#AB47BC',
+        '#26C6DA', '#66BB6A', '#FFCA28', '#EF5350', '#EC407A',
+        '#7E57C2', '#5C6BC0', '#29B6F6', '#26A69A', '#9CCC65'
+    ];
+    const color = colors[parseInt(userId) % colors.length];
+    const initial = username ? username.charAt(0) : '?';
+
+    const sizeMap = { tiny: 24, small: 32, normal: 40, large: 48, xlarge: 80, xxlarge: 100 };
+    const sizePx = sizeMap[size] || 40;
+
+    return `<svg width="${sizePx}" height="${sizePx}" viewBox="0 0 40 40" class="default-avatar ${className}">
+        <circle cx="20" cy="20" r="20" fill="${color}" />
+        <text x="20" y="26" text-anchor="middle" fill="#fff" font-size="16" font-weight="500">${escapeHtml(initial)}</text>
+    </svg>`;
+}
 
 // 点赞功能
 function toggleLike(postId, btn) {
@@ -785,6 +1176,26 @@ function showToast(message, type = 'info') {
 
 .edit-reply-btn:hover {
     color: #ff6b6b;
+}
+
+/* 新回复高亮动画 */
+@keyframes replyHighlight {
+    0% { background-color: rgba(255, 107, 107, 0.15); }
+    100% { background-color: transparent; }
+}
+
+.reply-highlight {
+    animation: replyHighlight 2s ease-out;
+}
+
+/* 新评论高亮动画 */
+@keyframes commentHighlight {
+    0% { background-color: rgba(255, 107, 107, 0.12); }
+    100% { background-color: transparent; }
+}
+
+.comment-highlight {
+    animation: commentHighlight 2s ease-out;
 }
 </style>
 

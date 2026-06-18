@@ -107,6 +107,10 @@ function verify_csrf($token) {
 
 // 跳转
 function redirect($url) {
+    // 防止浏览器缓存重定向后的页面，确保新数据立即显示
+    header('Cache-Control: no-cache, no-store, must-revalidate');
+    header('Pragma: no-cache');
+    header('Expires: 0');
     header("Location: $url");
     exit;
 }

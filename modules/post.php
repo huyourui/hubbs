@@ -28,6 +28,10 @@ class PostModule {
                 return $this->like();
             case 'favorite':
                 return $this->favorite();
+            case 'delete':
+                return $this->delete();
+            case 'deleteReply':
+                return $this->deleteReply();
             default:
                 redirect('index.php');
         }
@@ -562,6 +566,29 @@ class PostModule {
         }
         
         set_message('回复成功');
+
+        // 如果是AJAX请求，返回JSON数据
+        if ($this->isAjaxRequest()) {
+            header('Content-Type: application/json');
+            $currentUser = Auth::user();
+            echo json_encode([
+                'success' => true,
+                'message' => '回复成功',
+                'reply' => [
+                    'id' => $db->lastInsertId(),
+                    'post_id' => $postId,
+                    'user_id' => Auth::id(),
+                    'username' => $currentUser['username'] ?? '',
+                    'avatar' => $currentUser['avatar'] ?? '',
+                    'content' => $content,
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'edit_count' => 0,
+                    'last_edit_at' => null
+                ]
+            ]);
+            exit;
+        }
+
         redirect('index.php?module=post&action=view&id=' . $postId);
     }
 
@@ -727,8 +754,39 @@ class PostModule {
         
         // 更新帖子回复数（包含楼中楼）
         $this->updatePostRepliesCount($postId);
-        
+
         set_message('回复成功');
+
+        // 如果是AJAX请求，返回JSON数据
+        if ($this->isAjaxRequest()) {
+            header('Content-Type: application/json');
+            $currentUser = Auth::user();
+
+            // 获取被回复的用户名
+            $toUsername = '';
+            if ($toUserId > 0) {
+                $toUser = $db->fetch("SELECT username FROM {$db->table('users')} WHERE id = ? LIMIT 1", [$toUserId]);
+                $toUsername = $toUser['username'] ?? '';
+            }
+
+            echo json_encode([
+                'success' => true,
+                'message' => '回复成功',
+                'comment' => [
+                    'id' => $db->lastInsertId(),
+                    'reply_id' => $replyId,
+                    'user_id' => Auth::id(),
+                    'username' => $currentUser['username'] ?? '',
+                    'avatar' => $currentUser['avatar'] ?? '',
+                    'to_user_id' => $toUserId,
+                    'to_username' => $toUsername,
+                    'content' => $content,
+                    'created_at' => date('Y-m-d H:i:s')
+                ]
+            ]);
+            exit;
+        }
+
         redirect('index.php?module=post&action=view&id=' . $postId);
     }
     
@@ -941,7 +999,133 @@ class PostModule {
         
         redirect('index.php?module=post&action=view&id=' . $postId);
     }
-    
+
+    /**
+     * 删除帖子（仅限作者自己删除）
+     */
+    private function delete() {
+        if (Auth::guest()) {
+            set_message('请先登录', 'error');
+            redirect('index.php?module=user&action=login');
+        }
+
+        // 验证CSRF
+        if (!verify_csrf($_GET['csrf_token'] ?? '')) {
+            set_message('安全验证失败', 'error');
+            redirect('index.php');
+        }
+
+        $db = DB::getInstance();
+        $postId = intval($_GET['id'] ?? 0);
+
+        if ($postId <= 0) {
+            set_message('参数错误', 'error');
+            redirect('index.php');
+        }
+
+        // 获取帖子信息
+        $post = $db->fetch("SELECT id, user_id, title FROM {$db->table('posts')} WHERE id = ? LIMIT 1", [$postId]);
+        if (!$post) {
+            set_message('帖子不存在', 'error');
+            redirect('index.php');
+        }
+
+        // 检查权限（只能删除自己的帖子，管理员可以删除所有帖子）
+        $currentUserId = Auth::id();
+        $isAdmin = Auth::isAdmin();
+        if ($post['user_id'] != $currentUserId && !$isAdmin) {
+            set_message('无权删除此帖子', 'error');
+            redirect('index.php?module=post&action=view&id=' . $postId);
+        }
+
+        // 删除帖子关联的回复
+        $db->delete('replies', 'post_id = ?', [$postId]);
+
+        // 删除帖子关联的楼中楼评论（通过 reply_id 关联）
+        $db->query("DELETE rc FROM {$db->table('reply_comments')} rc INNER JOIN {$db->table('replies')} r ON rc.reply_id = r.id WHERE r.post_id = ?", [$postId]);
+
+        // 删除帖子关联的点赞记录
+        $db->delete('post_likes', 'post_id = ?', [$postId]);
+
+        // 删除帖子关联的收藏记录
+        $db->delete('post_favorites', 'post_id = ?', [$postId]);
+
+        // 删除帖子关联的通知
+        $db->delete('notifications', 'target_id = ? AND target_type = ?', [$postId, 'post']);
+
+        // 删除帖子关联的文件
+        Upload::deleteByPost($postId);
+
+        // 删除帖子
+        $db->delete('posts', 'id = ?', [$postId]);
+
+        // 更新板块帖子数
+        $forumId = $post['forum_id'] ?? 0;
+        if ($forumId > 0) {
+            $count = $db->count('posts', 'forum_id = ?', [$forumId]);
+            $db->update('forums', ['post_count' => $count], 'id = ?', [$forumId]);
+        }
+
+        set_message('帖子已删除');
+        redirect('index.php');
+    }
+
+    /**
+     * 删除回复（仅限作者自己删除）
+     */
+    private function deleteReply() {
+        if (Auth::guest()) {
+            set_message('请先登录', 'error');
+            redirect('index.php?module=user&action=login');
+        }
+
+        // 验证CSRF
+        if (!verify_csrf($_GET['csrf_token'] ?? '')) {
+            set_message('安全验证失败', 'error');
+            redirect('index.php');
+        }
+
+        $db = DB::getInstance();
+        $replyId = intval($_GET['id'] ?? 0);
+
+        if ($replyId <= 0) {
+            set_message('参数错误', 'error');
+            redirect('index.php');
+        }
+
+        // 获取回复信息
+        $reply = $db->fetch("SELECT id, post_id, user_id FROM {$db->table('replies')} WHERE id = ? LIMIT 1", [$replyId]);
+        if (!$reply) {
+            set_message('回复不存在', 'error');
+            redirect('index.php');
+        }
+
+        $postId = $reply['post_id'];
+
+        // 检查权限（只能删除自己的回复，管理员可以删除所有回复）
+        $currentUserId = Auth::id();
+        $isAdmin = Auth::isAdmin();
+        if ($reply['user_id'] != $currentUserId && !$isAdmin) {
+            set_message('无权删除此回复', 'error');
+            redirect('index.php?module=post&action=view&id=' . $postId);
+        }
+
+        // 删除回复关联的楼中楼评论
+        $db->delete('reply_comments', 'reply_id = ?', [$replyId]);
+
+        // 删除回复关联的通知
+        $db->delete('notifications', 'target_id = ? AND target_type = ?', [$replyId, 'reply']);
+
+        // 删除回复
+        $db->delete('replies', 'id = ?', [$replyId]);
+
+        // 更新帖子回复数
+        $this->updatePostRepliesCount($postId);
+
+        set_message('回复已删除');
+        redirect('index.php?module=post&action=view&id=' . $postId);
+    }
+
     /**
      * 判断是否是AJAX请求
      */
