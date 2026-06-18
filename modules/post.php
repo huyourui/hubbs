@@ -79,6 +79,15 @@ class PostModule {
             $params
         );
         
+        // 获取最新注册用户（排除已删除和被封禁的用户）
+        $latestUsers = $db->fetchAll(
+            "SELECT id, username, avatar 
+             FROM {$db->table('users')} 
+             WHERE deleted_at IS NULL AND status = 1 
+             ORDER BY created_at DESC 
+             LIMIT 8"
+        );
+
         return [
             'template' => 'post_list',
             'data' => [
@@ -89,7 +98,8 @@ class PostModule {
                 'page' => $page,
                 'total' => $total,
                 'totalPages' => ceil($total / POSTS_PER_PAGE),
-                'settings' => Settings::getAll()
+                'settings' => Settings::getAll(),
+                'latestUsers' => $latestUsers
             ]
         ];
     }

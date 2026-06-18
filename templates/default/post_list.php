@@ -186,18 +186,15 @@ include __DIR__ . '/header.php';
                 <h3>最新用户</h3>
             </div>
             <div class="card-body">
-                <?php
-                $latestUsers = $db->fetchAll("SELECT id, username, avatar FROM {$db->table('users')} ORDER BY created_at DESC LIMIT 8");
-                ?>
                 <div class="user-avatars">
                     <?php foreach ($latestUsers as $u): ?>
-                    <div class="user-avatar-item" title="<?php e($u['username']); ?>">
+                    <a href="index.php?module=user&action=profile&id=<?php echo $u['id']; ?>" class="user-avatar-item" title="<?php e($u['username']); ?>">
                         <?php if ($u['avatar']): ?>
                         <img src="<?php e($u['avatar']); ?>" alt="<?php e($u['username']); ?>">
                         <?php else: ?>
                         <?php echo render_default_avatar($u['id'], $u['username'], 'small', 'avatar-small'); ?>
                         <?php endif; ?>
-                    </div>
+                    </a>
                     <?php endforeach; ?>
                 </div>
             </div>
