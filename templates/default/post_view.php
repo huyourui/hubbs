@@ -602,9 +602,26 @@ function addReplyToList(reply) {
     // 添加到列表末尾
     listContainer.insertAdjacentHTML('beforeend', replyHtml);
 
-    // 滚动到新回复
+    // 为新插入的回复中的楼中楼表单绑定AJAX提交
     const newReply = listContainer.lastElementChild;
     if (newReply) {
+        const newCommentForm = newReply.querySelector('.reply-comment-form');
+        if (newCommentForm) {
+            setupAjaxForm(newCommentForm, function(data) {
+                if (data.success && data.comment) {
+                    addCommentToList(data.comment);
+                    newCommentForm.reset();
+                    const replyId = newCommentForm.querySelector('input[name="reply_id"]').value;
+                    hideReplyForm(replyId);
+                    showToast('回复成功', 'success');
+                    updateReplyCount(1);
+                } else {
+                    showToast(data.message || '回复失败', 'error');
+                }
+            });
+        }
+
+        // 滚动到新回复
         newReply.scrollIntoView({ behavior: 'smooth', block: 'center' });
         // 添加高亮动画
         newReply.classList.add('reply-highlight');
@@ -683,6 +700,44 @@ function createReplyHtml(reply, floorNumber, currentUserAvatar, currentUserId) {
         </button>
     ` : '';
 
+    // 获取当前用户信息用于生成楼中楼表单
+    const currentUser = <?php echo Auth::check() ? json_encode(Auth::user()) : 'null'; ?>;
+    const csrfToken = '<?php echo csrf_token(); ?>';
+    const postId = <?php echo $post['id']; ?>;
+
+    // 生成楼中楼回复表单（如果用户已登录）
+    let commentFormHtml = '';
+    if (currentUser) {
+        const commentAvatarHtml = currentUser.avatar
+            ? `<img src="${escapeHtml(currentUser.avatar)}" alt="">`
+            : renderAvatarSvg(currentUser.id, currentUser.username, 'small', 'avatar-tiny');
+
+        commentFormHtml = `
+            <div class="reply-comment-form-wrapper" id="reply-form-${reply.id}" style="display: none;">
+                <form method="post" action="index.php?module=post&action=replyComment" class="reply-comment-form">
+                    <input type="hidden" name="csrf_token" value="${csrfToken}">
+                    <input type="hidden" name="reply_id" value="${reply.id}">
+                    <input type="hidden" name="post_id" value="${postId}">
+                    <input type="hidden" name="to_user_id" value="0" id="to-user-id-${reply.id}">
+                    <div class="editor-toolbar">
+                        <button type="button" class="emoji-btn" onclick="toggleEmojiPanel(${reply.id})" title="插入表情">
+                            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></svg>
+                        </button>
+                        <div class="emoji-panel emoji-panel-small" id="emoji-panel-${reply.id}" style="display: none;"></div>
+                    </div>
+                    <div class="reply-input-box">
+                        <span class="reply-target" id="reply-target-${reply.id}">回复 ${escapeHtml(reply.username)}：</span>
+                        <textarea name="content" id="reply-textarea-${reply.id}" rows="2" placeholder="写下你的回复..." required></textarea>
+                    </div>
+                    <div class="reply-form-actions">
+                        <button type="button" class="btn-cancel" onclick="hideReplyForm(${reply.id})">取消</button>
+                        <button type="submit" class="btn-submit">发表</button>
+                    </div>
+                </form>
+            </div>
+        `;
+    }
+
     return `
         <div class="reply-item reply-highlight" id="reply-${reply.id}">
             <div class="reply-author">
@@ -699,7 +754,7 @@ function createReplyHtml(reply, floorNumber, currentUserAvatar, currentUserId) {
             </div>
             <div class="reply-content">
                 <div class="reply-body" id="reply-body-${reply.id}">
-                    ${reply.content}
+                    ${renderWechatEmojis(reply.content)}
                 </div>
                 <div class="reply-actions">
                     <button type="button" class="action-btn reply-btn" onclick="showReplyForm(${reply.id}, 0, '${escapeHtml(reply.username)}')">
@@ -708,6 +763,7 @@ function createReplyHtml(reply, floorNumber, currentUserAvatar, currentUserId) {
                     </button>
                     ${editButtons}
                 </div>
+                ${commentFormHtml}
             </div>
         </div>
     `;
@@ -744,7 +800,7 @@ function createCommentHtml(comment, isCollapsed) {
                     <span class="comment-time">刚刚</span>
                 </div>
                 <div class="comment-body">
-                    ${comment.content}
+                    ${renderWechatEmojis(comment.content)}
                 </div>
             </div>
             <button type="button" class="comment-reply-btn" onclick="showReplyForm(${comment.reply_id}, ${comment.user_id}, '${escapeHtml(comment.username)}')">
@@ -999,6 +1055,18 @@ function insertEmoji(textareaId, emojiText) {
 
     // 聚焦文本框
     textarea.focus();
+}
+
+/**
+ * 前端渲染微信表情（将 [表情名] 转换为 emoji）
+ * 与后端 render_emojis() 函数保持一致
+ */
+function renderWechatEmojis(text) {
+    if (!text) return '';
+    return text.replace(/\[([^\]]+)\]/g, function(match, name) {
+        const emoji = WECHAT_EMOJIS[name];
+        return emoji ? '<span class="wechat-emoji" title="' + name + '">' + emoji + '</span>' : match;
+    });
 }
 
 /**
